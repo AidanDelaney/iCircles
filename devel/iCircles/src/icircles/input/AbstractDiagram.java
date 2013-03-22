@@ -49,6 +49,11 @@ public class AbstractDiagram {
             @JsonProperty(value="Zones")       Zone[] zones,
             @JsonProperty(value="ShadedZones") Zone[] shadedZones,
             @JsonProperty(value="Spiders")     Spider[] spiders) throws IllegalArgumentException {
+
+	if (null == contours || null == zones || null == shadedZones || null == spiders ) {
+	    throw new IllegalArgumentException();
+	}
+
         this.version     = version;
         this.contours    = new HashSet<String>(Arrays.asList(contours));
         this.zones       = new HashSet<Zone>(Arrays.asList(zones));
