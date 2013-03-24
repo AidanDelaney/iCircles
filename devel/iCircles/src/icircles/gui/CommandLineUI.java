@@ -147,7 +147,7 @@ public class CommandLineUI {
         DiagramCreator dc       = new DiagramCreator(abstractDescription);
 
         try {
-            CirclesSVGGenerator csg = new CirclesSVGGenerator(dc.createDiagram(canvasSize));
+            CirclesSVGGenerator csg = new CirclesSVGGenerator(dc.createDiagram(canvasSize), new CirclesSVGGenerator.SketchCirclesSVGDrawer());
 
             System.out.println(csg.toString());
         } catch (CannotDrawException cde) {

@@ -1,32 +1,20 @@
 package icircles.gui;
 
-import icircles.concreteDiagram.CircleContour;
-import icircles.concreteDiagram.ConcreteDiagram;
-import icircles.concreteDiagram.ConcreteSpider;
-import icircles.concreteDiagram.ConcreteSpiderFoot;
-import icircles.concreteDiagram.ConcreteSpiderLeg;
-import icircles.concreteDiagram.ConcreteZone;
+import icircles.concreteDiagram.*;
 
 import java.awt.Color;
-import java.awt.geom.Area;
-import java.awt.geom.PathIterator;
+import java.util.List;
+import java.awt.geom.*;
 import java.io.StringWriter;
+import java.util.ArrayList;
 
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.batik.dom.svg.SVGDOMImplementation;
-import org.w3c.dom.DOMImplementation;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Text;
-import org.w3c.dom.svg.SVGDocument;
+import org.w3c.dom.*;
+import org.w3c.dom.svg.*;
 
 public class CirclesSVGGenerator {
 	
@@ -97,7 +85,7 @@ public class CirclesSVGGenerator {
 	    public abstract SVGDocument toSVG(ConcreteDiagram cd);
 	}
 
-	public static class PlainCircleSVGDrawer extends CircleSVGDrawer{
+	public static class PlainCircleSVGDrawer extends CircleSVGDrawer {
 	    /**
 	     * Draws a concreteDiagram as an SVG.
 	     *
@@ -205,6 +193,121 @@ public class CirclesSVGGenerator {
 	    }
 	}
 
+	public static class SketchCirclesSVGDrawer extends CircleSVGDrawer {
+	
+	    private List<CubicCurve2D.Float> circleToPath(float circleX, float circleY, float circleR) {
+	        List<CubicCurve2D.Float> path = new ArrayList<CubicCurve2D.Float>();
+
+	        // magic number pulled from thin air
+	        final float magicDelta = 10;
+	        path.add(new CubicCurve2D.Float(
+	                     circleX - magicDelta, (circleY-circleR) - magicDelta,   // x1, y1
+	                     circleX + (circleR/2), circleY - circleR,               // control point 1
+	                     circleX + circleR,     circleY - (circleR/2),           // control point 2
+	                     circleX + circleR,     circleY                          // to (x2, y2)
+	                     )
+	        );
+
+            path.add(new CubicCurve2D.Float(
+                    circleX + circleR,     circleY,
+                    circleX + circleR,     circleY + (circleR/2),
+                    circleX + (circleR/2), circleY + circleR,
+                    circleX,               circleY + circleR
+                    )
+            );
+
+            path.add(new CubicCurve2D.Float(
+                    circleX,               circleY + circleR,
+                    circleX - (circleR/2), circleY + circleR,
+                    circleX - circleR,     circleY + (circleR/2),
+                    circleX - circleR,     circleY
+                    )
+            );
+
+            path.add(new CubicCurve2D.Float(
+                    circleX - circleR,     circleY,
+                    circleX - circleR,     circleY - (circleR/2),
+                    circleX,               circleY-circleR,
+                    circleX + magicDelta,  (circleY-circleR) - magicDelta
+                    )
+            );
+
+	        return path;
+	    }
+
+	    private Element circleToSVGPath(SVGDocument document, SVGCircleElement circle) {
+	        String         svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
+
+	        // Turn the circle into a path 
+
+	        // We start the path at the maximal x and y point
+	        float circleX = circle.getCx().getAnimVal().getValue();
+	        float circleY = circle.getCy().getAnimVal().getValue();
+	        float circleR = circle.getR().getAnimVal().getValue();
+
+	        List<CubicCurve2D.Float> path = circleToPath(circleX, circleY, circleR);
+
+	        Element group = document.createElementNS(svgNS, "g");  // <g> is an SVG group
+	        for(CubicCurve2D.Float curve : path) {
+	            StringBuilder strpath = new StringBuilder();
+	            strpath.append("M " + curve.getX1() + ", " + curve.getY1() + " ");
+
+	            strpath.append("C" + curve.getCtrlX1() + ", " + curve.getCtrlY1()  + " "
+	                    + curve.getCtrlX2() + ", " + curve.getCtrlY2() + " "
+	                    + curve.getX2() + ", " + curve.getY2()
+	                    );
+	            Element svgpath = document.createElementNS(svgNS, "path");
+	            svgpath.setAttribute("stroke", "green");
+	            svgpath.setAttribute("stroke-width", "2");
+	            svgpath.setAttribute("fill", "none");
+	            svgpath.setAttribute("d", strpath.toString());
+	            group.appendChild(svgpath);
+
+	            for(double i = 0.0; i <= 1.0; i+= 0.01) { // TODO: magic number in loop guard
+	                Point2D result = evalParametric(curve, i);
+
+	                // Add random jitter between -1.0 and + 1.0
+	                float dx = (float) ((Math.random() * 2.0) - 1.0);
+	                float dy = (float) ((Math.random() * 2.0) - 1.0);
+
+	                Element brush = document.createElementNS(svgNS, "circle");
+	                brush.setAttribute("cx", Double.toString(result.getX() + dx));
+	                brush.setAttribute("cy", Double.toString(result.getY() + dy));
+	                brush.setAttribute("r", Double.toString(2.0)); // TODO: magic number
+	                brush.setAttribute("fill", "green");
+	                group.appendChild(brush);
+	            }
+	        }
+
+	        return group;
+		}
+
+		private Node pathToSketchPath(Element group) {
+			return group;
+		}
+
+        @Override
+        public SVGDocument toSVG(ConcreteDiagram cd) {
+            /*
+             * Use a Plain drawer to generate an SVG Document, then
+             * "post-process" any SVG circles in the document to convert
+             * them into "sketches".
+             */
+            SVGDocument document        = (new PlainCircleSVGDrawer()).toSVG(cd);
+            //return document;
+
+            // find each circle in the document and turn it into a sketch
+            NodeList circles = document.getElementsByTagName("circle");
+            //for(int i = 0; i < circles.getLength(); i++) {
+                SVGCircleElement circle = (SVGCircleElement) circles.item(0);//i);
+                Node     circleAsSketch = pathToSketchPath(circleToSVGPath(document, circle));
+                circle.getParentNode().replaceChild(circleAsSketch, circle);
+            //}
+
+            return document;
+		}
+	}
+	
     static enum zOrder {SHADING, CONTOUR, LABEL, SPIDER};
 
     private ConcreteDiagram diagram;
@@ -220,6 +323,11 @@ public class CirclesSVGGenerator {
         }
         diagram = d;
         drawer  = new PlainCircleSVGDrawer();
+    }
+
+    public CirclesSVGGenerator(ConcreteDiagram d, CircleSVGDrawer drawer) {
+        this(d);
+        this.drawer = drawer;
     }
 
     @Override
@@ -243,4 +351,31 @@ public class CirclesSVGGenerator {
         }
         return null;
     }
+
+    public SVGDocument toSVG() {
+        return drawer.toSVG(diagram);
+    }
+
+    static public Point2D evalParametric(
+        CubicCurve2D curve,
+        double t
+      )
+      {
+        if(null == curve) {
+            return null;
+        }
+
+        // B(t) = (1-t)^3 P_0 + 3(1-t)^2t C_1 + 3(1 - t)t^2 C_2 +  t^3 P_1
+        // do nothing fancy, just calculate it.
+        double rx = ((Math.pow((1-t), 3) * curve.getX1()))
+                + (3*Math.pow((1-t),2) * t * curve.getCtrlX1())
+                + (3*(1-t) * t * t * curve.getCtrlX2())
+                + (t * t * t * curve.getX2());
+        double ry = ((Math.pow((1-t), 3) * curve.getY1()))
+                + (3*Math.pow((1-t),2) * t * curve.getCtrlY1())
+                + (3*(1-t) * t * t * curve.getCtrlY2())
+                + (t * t * t * curve.getY2());
+
+        return new Point2D.Float((float) rx, (float) ry);
+      }
 }
