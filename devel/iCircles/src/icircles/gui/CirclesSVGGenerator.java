@@ -228,11 +228,9 @@ public class CirclesSVGGenerator {
             // magic number pulled from thin air
             final float magicDelta = 10;
             path.add(new CubicCurve2D.Float(circleX - magicDelta,
-                    (circleY - circleR) - magicDelta, // x1, y1
-                    circleX + (circleR / 2), circleY - circleR, // control point
-                                                                // 1
-                    circleX + circleR, circleY - (circleR / 2), // control point
-                                                                // 2
+                    (circleY - circleR) - magicDelta,           // x1, y1
+                    circleX + (circleR / 2), circleY - circleR, // control point 1
+                    circleX + circleR, circleY - (circleR / 2), // control point 2
                     circleX + circleR, circleY // to (x2, y2)
             ));
 
@@ -253,6 +251,25 @@ public class CirclesSVGGenerator {
             return path;
         }
 
+        static public Point2D evalParametric(CubicCurve2D curve, double t) {
+            if (null == curve) {
+                return null;
+            }
+
+            // B(t) = (1-t)^3 P_0 + 3(1-t)^2t C_1 + 3(1 - t)t^2 C_2 + t^3 P_1
+            // do nothing fancy, just calculate it.
+            double rx = ((Math.pow((1 - t), 3) * curve.getX1()))
+                    + (3 * Math.pow((1 - t), 2) * t * curve.getCtrlX1())
+                    + (3 * (1 - t) * t * t * curve.getCtrlX2())
+                    + (t * t * t * curve.getX2());
+            double ry = ((Math.pow((1 - t), 3) * curve.getY1()))
+                    + (3 * Math.pow((1 - t), 2) * t * curve.getCtrlY1())
+                    + (3 * (1 - t) * t * t * curve.getCtrlY2())
+                    + (t * t * t * curve.getY2());
+
+            return new Point2D.Float((float) rx, (float) ry);
+        }
+
         private Element circleToSVGPath(SVGDocument document,
                 SVGCircleElement circle) {
             String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
@@ -267,8 +284,9 @@ public class CirclesSVGGenerator {
             List<CubicCurve2D.Float> path = circleToPath(circleX, circleY,
                     circleR);
 
-            Element group = document.createElementNS(svgNS, "g"); // <g> is an
-                                                                  // SVG group
+            // <g> is an SVG group
+            Element group = document.createElementNS(svgNS, "g"); 
+
             for (CubicCurve2D.Float curve : path) {
                 StringBuilder strpath = new StringBuilder();
                 strpath.append("M " + curve.getX1() + ", " + curve.getY1()
@@ -285,12 +303,12 @@ public class CirclesSVGGenerator {
                 svgpath.setAttribute("d", strpath.toString());
                 group.appendChild(svgpath);
 
-                for (double i = 0.0; i <= 1.0; i += 0.01) { // TODO: magic
-                                                            // number in loop
-                                                            // guard
+             // TODO: magic number & step in loop guard
+                for (double i = 0.0; i <= 1.0; i += 0.01) { 
                     Point2D result = evalParametric(curve, i);
 
                     // Add random jitter between -1.0 and + 1.0
+                    // TODO: magic number for jitter
                     float dx = (float) ((Math.random() * 2.0) - 1.0);
                     float dy = (float) ((Math.random() * 2.0) - 1.0);
 
@@ -299,9 +317,8 @@ public class CirclesSVGGenerator {
                             Double.toString(result.getX() + dx));
                     brush.setAttribute("cy",
                             Double.toString(result.getY() + dy));
-                    brush.setAttribute("r", Double.toString(2.0)); // TODO:
-                                                                   // magic
-                                                                   // number
+                    // TODO: magic number for circle radius
+                    brush.setAttribute("r", Double.toString(2.0));
                     brush.setAttribute("fill", "green");
                     group.appendChild(brush);
                 }
@@ -385,24 +402,5 @@ public class CirclesSVGGenerator {
 
     public SVGDocument toSVG() {
         return drawer.toSVG(diagram);
-    }
-
-    static public Point2D evalParametric(CubicCurve2D curve, double t) {
-        if (null == curve) {
-            return null;
-        }
-
-        // B(t) = (1-t)^3 P_0 + 3(1-t)^2t C_1 + 3(1 - t)t^2 C_2 + t^3 P_1
-        // do nothing fancy, just calculate it.
-        double rx = ((Math.pow((1 - t), 3) * curve.getX1()))
-                + (3 * Math.pow((1 - t), 2) * t * curve.getCtrlX1())
-                + (3 * (1 - t) * t * t * curve.getCtrlX2())
-                + (t * t * t * curve.getX2());
-        double ry = ((Math.pow((1 - t), 3) * curve.getY1()))
-                + (3 * Math.pow((1 - t), 2) * t * curve.getCtrlY1())
-                + (3 * (1 - t) * t * t * curve.getCtrlY2())
-                + (t * t * t * curve.getY2());
-
-        return new Point2D.Float((float) rx, (float) ry);
     }
 }
