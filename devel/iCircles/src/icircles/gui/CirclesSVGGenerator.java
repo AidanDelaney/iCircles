@@ -393,10 +393,12 @@ public class CirclesSVGGenerator {
                 for (double i = 0.0; i <= 1.0; i += 0.01) { 
                     Point2D result = evalParametric(curve, i);
 
-                    // Add random jitter between -1.0 and + 1.0
-                    // TODO: magic number for jitter
-                    float dx = (float) ((Math.random() * 2.0) - 1.0);
-                    float dy = (float) ((Math.random() * 2.0) - 1.0);
+                    // Add random jitter at some random positive or negative 
+                    // distance along the unit normal to the tangent of the 
+                    // curve
+                    Point2D n = vectorUnitNormal(evalParametricTangent(curve, i));
+                    float dx = (float) (((Math.random() * 2.0) - 1.0) * n.getX());
+                    float dy = (float) (((Math.random() * 2.0) - 1.0) * n.getY());
 
                     Element brush = document.createElementNS(svgNS, "circle");
                     brush.setAttribute("cx",
