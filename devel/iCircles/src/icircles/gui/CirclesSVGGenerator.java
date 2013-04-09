@@ -220,9 +220,47 @@ public class CirclesSVGGenerator {
     }
 
     public static class SketchCirclesSVGDrawer extends CircleSVGDrawer {
+        /**
+         * The DOM API states that NodeLists are dynamic, this means that when
+         * we replace a circle in the NodeList with a group of circles, then the
+         * original NodeList updates itself to contain the newly added circles.
+         * As we want to replace all circles with a group that possibly contains
+         * circles, then we need to turn the NodeList into a non-dynamic
+         * structure.
+         * @param nl
+         * @return Either null if the input parameter is null, or a List
+         * representation of the NodeList.
+         */
+        private List<Node> nodeListToList(NodeList nl) {
+            if(null == nl) {
+                return null;
+            }
 
-        private List<CubicCurve2D.Float> circleToPath(float circleX,
-                float circleY, float circleR) {
+            List <Node> list = new ArrayList<Node>();
+            for(int i = 1; i < nl.getLength(); i++) {
+                list.add(nl.item(i));
+            }
+            return list;
+        }
+
+        /**
+         * Given a circle defined by an (x, y) centre point and a radius, we
+         * return a List of Cubic Bezier curves that <emph>almost</emph> fit the
+         * circle.  Rather than exactly fitting the circle, the returned curves
+         * represent a path that is akin to a user sketch of the circle.  In
+         * particular the first point of the first stroke and the last point of
+         * the last stroke are offset such that they do not join and, ideally, 
+         * even cross each other.
+         * 
+         * TODO: Add randomness to magicDelta so that the sketch is more random
+         * looking.
+         * 
+         * @param circleX
+         * @param circleY
+         * @param circleR
+         * @return
+         */
+        private List<CubicCurve2D.Float> circleToPath(float circleX, float circleY, float circleR) {
             List<CubicCurve2D.Float> path = new ArrayList<CubicCurve2D.Float>();
 
             // magic number pulled from thin air
@@ -270,8 +308,67 @@ public class CirclesSVGGenerator {
             return new Point2D.Float((float) rx, (float) ry);
         }
 
-        private Element circleToSVGPath(SVGDocument document,
-                SVGCircleElement circle) {
+        static public Point2D evalParametricTangent(CubicCurve2D curve, double t) {
+            if(null == curve) {
+                return null;
+            }
+
+            // B'(t) = 3(1-t)^2 P_0 + 3((1-t)^2 - 2t(1-t)) C_1
+            //                      + 3(2t(1-t)-t^2) C_2
+            //                      + 3t^2 P_1
+            // Calculate the x and y values at t of the derivative of the cubic
+            // Bezier.
+            double rx = ((3 - (6 * t) + (3 * t * t)) * curve.getX1())
+                    + ((9 - (24 * t) + (15 * t * t)) * curve.getCtrlX1())
+                    + (((6 * t) - (9 * t * t)) * curve.getCtrlX2())
+                    + ((3 * t * t) * curve.getX2());
+            double ry = ((3 - (6 * t) + (3 * t * t)) * curve.getY1())
+                    + ((9 - (24 * t) + (15 * t * t)) * curve.getCtrlY1())
+                    + (((6 * t) - (9 * t * t)) * curve.getCtrlY2())
+                    + ((3 * t * t) * curve.getY2());
+
+            return new Point2D.Float((float) rx, (float) ry);
+        }
+
+        /**
+         * Calculates the unit normal of a particular vector, where the vector
+         * is represented by the direction and magnitude of the line segment
+         * from (0,0) to (p.x, p.y).
+         * @param p
+         * @return
+         */
+        static public Point2D vectorUnitNormal(Point2D p) {
+            // if null object passed or if the passed vector has zero length
+            if(null == p || ((0 == p.getX()) && (0 == p.getY()))) {
+                return null;
+            }
+
+            // normalise the input "vector"
+            // 1. get length of vector (Pythagoras)
+            // 2. divide both x and y by this length
+            // note: c cannot be 0 as we've already considered zero length input
+            // vectors above.
+            double c   = Math.sqrt((p.getX() * p.getX()) + (p.getY() * p.getY()));
+            double nvx = p.getX() / c;
+            double nvy = p.getY() / c;
+
+            // Now rotate (nvx, nvy) by 90 degrees to get the normal for the
+            // input vector.
+            // rx = nvx * cos (pi/2) - nvy * sin (pi/2)
+            // ty = nvx * sin (pi/2) + nvy * cos (pi/2)
+            // but cos (pi/2) = 0 and sin (pi/2) = 1, so this simplifies
+            return new Point2D.Float((float) (-1 * nvy), (float) nvx);
+        }
+
+        /**
+         * Creates a new group in the given document where the new group is a
+         * collection of "brush strokes" that represent a "sketch" of the passed
+         * circle.  In our case the brush strokes are simple circles.
+         * @param document
+         * @param circle
+         * @return
+         */
+        private Element circleToSketch(SVGDocument document, SVGCircleElement circle) {
             String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
 
             // Turn the circle into a path
@@ -285,24 +382,13 @@ public class CirclesSVGGenerator {
                     circleR);
 
             // <g> is an SVG group
+            // TODO: add a random(ish) rotation to the group
             Element group = document.createElementNS(svgNS, "g"); 
 
+            // For each curve in the path, draw along it using a "brush".  In
+            // our case the brush is a simple circle, but this could be changed
+            // to something more advanced.
             for (CubicCurve2D.Float curve : path) {
-                StringBuilder strpath = new StringBuilder();
-                strpath.append("M " + curve.getX1() + ", " + curve.getY1()
-                        + " ");
-
-                strpath.append("C" + curve.getCtrlX1() + ", "
-                        + curve.getCtrlY1() + " " + curve.getCtrlX2() + ", "
-                        + curve.getCtrlY2() + " " + curve.getX2() + ", "
-                        + curve.getY2());
-                Element svgpath = document.createElementNS(svgNS, "path");
-                svgpath.setAttribute("stroke", "green");
-                svgpath.setAttribute("stroke-width", "2");
-                svgpath.setAttribute("fill", "none");
-                svgpath.setAttribute("d", strpath.toString());
-                group.appendChild(svgpath);
-
              // TODO: magic number & step in loop guard
                 for (double i = 0.0; i <= 1.0; i += 0.01) { 
                     Point2D result = evalParametric(curve, i);
@@ -318,16 +404,14 @@ public class CirclesSVGGenerator {
                     brush.setAttribute("cy",
                             Double.toString(result.getY() + dy));
                     // TODO: magic number for circle radius
-                    brush.setAttribute("r", Double.toString(2.0));
+                    brush.setAttribute("r", Double.toString(1.0));
                     brush.setAttribute("fill", "green");
+                    brush.setAttributeNS(null, "z-index",
+                            Integer.toString(zOrder.CONTOUR.ordinal()));
                     group.appendChild(brush);
                 }
             }
 
-            return group;
-        }
-
-        private Node pathToSketchPath(Element group) {
             return group;
         }
 
@@ -341,14 +425,16 @@ public class CirclesSVGGenerator {
             SVGDocument document = (new PlainCircleSVGDrawer()).toSVG(cd);
             // return document;
 
-            // find each circle in the document and turn it into a sketch
-            NodeList circles = document.getElementsByTagName("circle");
-            // for(int i = 0; i < circles.getLength(); i++) {
-            SVGCircleElement circle = (SVGCircleElement) circles.item(0);// i);
-            Node circleAsSketch = pathToSketchPath(circleToSVGPath(document,
-                    circle));
-            circle.getParentNode().replaceChild(circleAsSketch, circle);
-            // }
+            // find each circle in the document and turn it into a sketch. We
+            // need to keep track of the circles and their eventual replacements
+            // as each circle is replaced by 10's of smaller circles, thus the
+            // DOM updates and we get the 10's of circles in our NodeList circles.
+            NodeList   circles     = document.getElementsByTagName("circle");
+            List<Node> replaceable = nodeListToList(circles);
+            for(Node n : replaceable) {
+                Node circleAsSketch = circleToSketch(document, (SVGCircleElement) n);
+                n.getParentNode().replaceChild(circleAsSketch, n);
+            }
 
             return document;
         }
