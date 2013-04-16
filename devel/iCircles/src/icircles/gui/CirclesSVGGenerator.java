@@ -289,7 +289,7 @@ public class CirclesSVGGenerator {
             return path;
         }
 
-        static public Point2D evalParametric(CubicCurve2D curve, double t) {
+        static private Point2D evalParametric(CubicCurve2D curve, double t) {
             if (null == curve) {
                 return null;
             }
@@ -308,7 +308,7 @@ public class CirclesSVGGenerator {
             return new Point2D.Float((float) rx, (float) ry);
         }
 
-        static public Point2D evalParametricTangent(CubicCurve2D curve, double t) {
+        static private Point2D evalParametricTangent(CubicCurve2D curve, double t) {
             if(null == curve) {
                 return null;
             }
@@ -337,7 +337,7 @@ public class CirclesSVGGenerator {
          * @param p
          * @return
          */
-        static public Point2D vectorUnitNormal(Point2D p) {
+        static private Point2D vectorUnitNormal(Point2D p) {
             // if null object passed or if the passed vector has zero length
             if(null == p || ((0 == p.getX()) && (0 == p.getY()))) {
                 return null;
@@ -361,25 +361,12 @@ public class CirclesSVGGenerator {
         }
 
         /**
-         * Creates a new group in the given document where the new group is a
-         * collection of "brush strokes" that represent a "sketch" of the passed
-         * circle.  In our case the brush strokes are simple circles.
-         * @param document
-         * @param circle
-         * @return
+         * Turns a List<CubicCurve2D.Float> into a SVG Element representing a
+         * sketch of that spline.
+         * 
          */
-        private Element circleToSketch(SVGDocument document, SVGCircleElement circle) {
+        private Element splineToSketch(SVGDocument document, List<CubicCurve2D.Float> spline) {
             String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
-
-            // Turn the circle into a path
-
-            // We start the path at the maximal x and y point
-            float circleX = circle.getCx().getAnimVal().getValue();
-            float circleY = circle.getCy().getAnimVal().getValue();
-            float circleR = circle.getR().getAnimVal().getValue();
-
-            List<CubicCurve2D.Float> path = circleToPath(circleX, circleY,
-                    circleR);
 
             // <g> is an SVG group
             // TODO: add a random(ish) rotation to the group
@@ -388,7 +375,7 @@ public class CirclesSVGGenerator {
             // For each curve in the path, draw along it using a "brush".  In
             // our case the brush is a simple circle, but this could be changed
             // to something more advanced.
-            for (CubicCurve2D.Float curve : path) {
+            for (CubicCurve2D.Float curve : spline) {
              // TODO: magic number & step in loop guard
                 for (double i = 0.0; i <= 1.0; i += 0.01) { 
                     Point2D result = evalParametric(curve, i);
@@ -415,6 +402,27 @@ public class CirclesSVGGenerator {
             }
 
             return group;
+        }
+        /**
+         * Creates a new group in the given document where the new group is a
+         * collection of "brush strokes" that represent a "sketch" of the passed
+         * circle.  In our case the brush strokes are simple circles.
+         * @param document
+         * @param circle
+         * @return
+         */
+        private Element circleToSketch(SVGDocument document, SVGCircleElement circle) {
+            // Turn the circle into a path
+
+            // We start the path at the maximal x and y point
+            float circleX = circle.getCx().getAnimVal().getValue();
+            float circleY = circle.getCy().getAnimVal().getValue();
+            float circleR = circle.getR().getAnimVal().getValue();
+
+            List<CubicCurve2D.Float> spline = circleToPath(circleX, circleY,
+                    circleR);
+
+            return splineToSketch(document, spline);
         }
 
         @Override
