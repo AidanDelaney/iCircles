@@ -397,8 +397,8 @@ public class CirclesSVGGenerator {
                     // distance along the unit normal to the tangent of the 
                     // curve
                     Point2D n = vectorUnitNormal(evalParametricTangent(curve, i));
-                    float dx = (float) (((Math.random() * 2.0) - 1.0) * n.getX());
-                    float dy = (float) (((Math.random() * 2.0) - 1.0) * n.getY());
+                    float dx = (float) ((Math.random() - 0.5) * n.getX());
+                    float dy = (float) ((Math.random() - 0.5) * n.getY());
 
                     Element brush = document.createElementNS(svgNS, "circle");
                     brush.setAttribute("cx",
