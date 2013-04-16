@@ -22,6 +22,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.junit.*;
 import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.svg.SVGDocument;
@@ -111,6 +112,24 @@ public class TestSketchGeneration {
         }
     }
 
+    public Element splineToSVGPath(Document document, List<CubicCurve2D.Float> spline) {
+     // <g> is an SVG group
+        // TODO: add a random(ish) rotation to the group
+        Element path = document.createElementNS(SVGDOMImplementation.SVG_NAMESPACE_URI, "path"); 
+
+        String d = "M " + spline.get(0).x1 + "," + spline.get(0).y1 +" C ";
+        for (CubicCurve2D.Float curve : spline) {
+            d += " " + curve.ctrlx1 + ", " + curve.ctrly1 
+                    + " " + curve.ctrlx2 + ", "  + curve.ctrly2
+                    + " " + curve.x2 + ", " + curve.y2;
+        }
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", "green");
+        path.setAttribute("d", d);
+        return path;
+   
+    }
+
     @Test
     public void testSketchContour() throws TransformerFactoryConfigurationError, TransformerException {
         CirclesSVGGenerator.SketchCirclesSVGDrawer scsd = new SketchCirclesSVGDrawer();
@@ -136,7 +155,7 @@ public class TestSketchGeneration {
             // introduce waggle
             spline = waggle(spline);
 
-            Node path = scsd.splineToSketch(document, spline);
+            Node path = splineToSVGPath(document, spline);
             svgRoot.appendChild(path);
 
             // Output to file
