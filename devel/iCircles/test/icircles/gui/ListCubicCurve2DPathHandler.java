@@ -11,13 +11,8 @@ import org.apache.batik.parser.PathHandler;
 public class ListCubicCurve2DPathHandler implements PathHandler {
     Point2D.Float p1 = new Point2D.Float(0.0f, 0.0f);
     List<CubicCurve2D.Float> spline;
-    float waggle;
 
-    /*
-     * Waggles the knot points by some random value +/- waggle.
-     */
-    public ListCubicCurve2DPathHandler(float waggle) {
-        this.waggle = waggle;
+    public ListCubicCurve2DPathHandler() {
     }
 
     @Override
@@ -84,12 +79,10 @@ public class ListCubicCurve2DPathHandler implements PathHandler {
     @Override
     public void curvetoCubicRel(float x1, float y1, float x2, float y2,
             float x, float y) throws ParseException {
-        float dx = (float) ((Math.random() * waggle) - waggle/2);
-        float dy = (float) ((Math.random() * waggle) - waggle/2);
 
         Point2D.Float cp1 = new Point2D.Float(p1.x + x1, p1.y + y1);
         Point2D.Float cp2 = new Point2D.Float(p1.x + x2, p1.y + y2);
-        Point2D.Float p2  = new Point2D.Float(p1.x + x + dx, p1.y + y + dy);
+        Point2D.Float p2  = new Point2D.Float(p1.x + x, p1.y + y);
         spline.add(new CubicCurve2D.Float(p1.x, p1.y, cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y));
         p1 = p2; // the new start point is the end of the segment that we've
                  // just curved to
