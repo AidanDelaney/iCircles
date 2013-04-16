@@ -365,7 +365,7 @@ public class CirclesSVGGenerator {
          * sketch of that spline.
          * 
          */
-        private Element splineToSketch(SVGDocument document, List<CubicCurve2D.Float> spline) {
+        Element splineToSketch(SVGDocument document, List<CubicCurve2D.Float> spline) {
             String svgNS = SVGDOMImplementation.SVG_NAMESPACE_URI;
 
             // <g> is an SVG group
