@@ -43,6 +43,7 @@ public class TestSketchGeneration {
         , "M 92.934027,25.037035 C 35.251895,11.072404 6.5637881,30.716551 13.888377,56.867128 26.203625,100.83558 18.290011,160.24424 62.629463,168.47871 c 33.183641,6.16267 80.972457,17.40066 116.478907,11.75863 32.74144,-5.20267 63.18181,-30.51719 74.43992,-38.0226 10.1935,-6.79566 34.21515,-23.00737 32.8946,-53.606268 -1.42759,-33.079056 -10.04174,-66.444508 -26.83368,-70.642493 -32.32488,-8.08122 -6.06092,42.42641 -36.36549,50.507627 -13.79979,3.679944 -42.18789,0.04217 -68.15136,3.211596 -31.05277,3.790687 -37.28349,-60.041475 -44.98573,-50.688764"
     };
     static List<List<CubicCurve2D.Float>> splines = new ArrayList<List<CubicCurve2D.Float>>();
+    static final float waggle  = 50.0f;
 
     private static Point2D.Float svgPointToPoint2D(String point) {
         // No error checking
@@ -53,7 +54,7 @@ public class TestSketchGeneration {
     }
 
     private static List<CubicCurve2D.Float> svgPathToSpline(String svgPath) {
-        ListCubicCurve2DPathHandler lcc2dph = new ListCubicCurve2DPathHandler();
+        ListCubicCurve2DPathHandler lcc2dph = new ListCubicCurve2DPathHandler(waggle);
         PathParser pp = new PathParser();
         pp.setPathHandler(lcc2dph);
         pp.parse(svgPath);
@@ -89,7 +90,7 @@ public class TestSketchGeneration {
 
             // Output to file
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            Result output = new StreamResult(new File(spline.hashCode() + ".xml"));
+            Result output = new StreamResult(new File(spline.hashCode() + "-" + waggle + ".xml"));
             Source input = new DOMSource(document);
 
             transformer.transform(input, output);
