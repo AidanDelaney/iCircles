@@ -89,5 +89,10 @@ public class AbstractCurve implements Comparable<AbstractCurve> {
     public String journalString() {
     return m_label.getLabel();
     }
+    
+    @Override
+    public String toString() {
+    	return journalString();
+    }
 
 }
