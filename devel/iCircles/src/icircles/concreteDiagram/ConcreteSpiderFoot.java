@@ -2,14 +2,20 @@ package icircles.concreteDiagram;
 
 import icircles.util.DEB;
 
+import java.awt.Point;
 import java.awt.geom.Ellipse2D;
 
-public class ConcreteSpiderFoot {
+public class ConcreteSpiderFoot implements Labellable {
 
     public static final double FOOT_RADIUS = 4;
     private double x;
     private double y;
     private ConcreteSpider spider;
+    private int labelBuffX = 5;
+    private int labelBuffY = 18;
+    private final int LABEL_NUDGE = 5;
+    private Point labelPoint;
+    
 
     public ConcreteSpiderFoot(double x, double y) {
         this.x = x;
@@ -85,4 +91,24 @@ public class ConcreteSpiderFoot {
     void setSpider(ConcreteSpider spider) {
         this.spider = spider;
     }
+
+	@Override
+	public Point getLabelPoint() {
+		if(labelPoint == null) {
+			labelPoint = new Point((int) (getX() - labelBuffX), (int) (getY() + labelBuffY));
+		}
+		return labelPoint;
+	}
+
+	@Override
+	public Point nudgeLabelPoint() {
+		labelBuffY += LABEL_NUDGE;
+		labelPoint = new Point((int) (getX() - labelBuffX), (int) (getY() + labelBuffY));
+		return labelPoint;
+	}
+	
+	@Override
+	public String getLabel() {
+		return this.getSpider().as.getName();
+	}
 }

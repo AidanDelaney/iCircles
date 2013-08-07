@@ -12,7 +12,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
-public class CircleContour {
+public class CircleContour implements Labellable {
 
     Ellipse2D.Double circle;
     double cx;
@@ -21,7 +21,7 @@ public class CircleContour {
     double nudge = 0.1;
     Point labelPoint;
     double thetaDeg = 45D;
-    int angleNudge = 5;
+    final int ANGLE_NUDGE = 5;
     final int LABEL_BUFF = 5;
     
     Color col;
@@ -104,14 +104,12 @@ public class CircleContour {
         return new Area(makeEllipse(cx, cy, radius + fatter));
     }
 
-    //TODO should be private, rely on the point
-    public double getLabelXPosition() {
+    private double getLabelXPosition() {
     	double theta = Math.toRadians(thetaDeg);
     	return cx + Math.cos(theta) * (radius + LABEL_BUFF);
     }
 
-    //TODO make private, rely on the point
-    public double getLabelYPosition() {
+    private double getLabelYPosition() {
     	double theta = Math.toRadians(thetaDeg);
     	return cy - Math.sin(theta) * (radius + LABEL_BUFF);
     }
@@ -124,7 +122,7 @@ public class CircleContour {
     }
     
     public Point nudgeLabelPoint() {
-    	thetaDeg += angleNudge;
+    	thetaDeg += ANGLE_NUDGE;
     	thetaDeg %= 360;
     	labelPoint = new Point((int)getLabelXPosition(), (int)getLabelYPosition());
     	return labelPoint;
@@ -241,4 +239,9 @@ public class CircleContour {
     public Stroke stroke() {
         return stroke;
     }
+
+	@Override
+	public String getLabel() {
+		return this.ac.getLabel().getLabel();
+	}
 }

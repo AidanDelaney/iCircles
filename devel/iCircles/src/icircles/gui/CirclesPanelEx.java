@@ -295,8 +295,8 @@ public class CirclesPanelEx extends JPanel {
                  */
 
                 g2d.drawString(cc.ac.getLabel().getLabel(),
-                        (int) (cc.getLabelXPosition() * trans.getScaleX()) + 5,
-                        (int) (cc.getLabelYPosition() * trans.getScaleY()) + 5);
+                        (int) (cc.getLabelPoint().getX() * trans.getScaleX()) + 5,
+                        (int) (cc.getLabelPoint().getY() * trans.getScaleY()) + 5);
             }
 
             ConcreteSpider highlightedSpider = getHighlightedFoot() == null ? null : getHighlightedFoot().getSpider();

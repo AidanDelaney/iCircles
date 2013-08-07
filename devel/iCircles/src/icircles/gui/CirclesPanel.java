@@ -7,6 +7,7 @@ import icircles.concreteDiagram.ConcreteSpider;
 import icircles.concreteDiagram.ConcreteSpiderFoot;
 import icircles.concreteDiagram.ConcreteSpiderLeg;
 import icircles.concreteDiagram.ConcreteZone;
+import icircles.concreteDiagram.Labellable;
 import icircles.util.CannotDrawException;
 
 import java.awt.BasicStroke;
@@ -112,6 +113,8 @@ public class CirclesPanel extends JPanel {
 		double scaleFactor;
 		private AffineTransform trans;
 		boolean autoRescale;
+		ArrayList<Rectangle2D> labelRects;
+		Rectangle2D boundingRect;
 
 		private void init(String failureMessage, boolean useColors, int size) {
 			setBackground(Color.white);
@@ -235,12 +238,13 @@ public class CirclesPanel extends JPanel {
 			}
 			((Graphics2D) g).setStroke(new BasicStroke(2));
 			ArrayList<CircleContour> circles = diagram.getCircles();
-			ArrayList<Rectangle2D> labelRects = new ArrayList<Rectangle2D>();
+			labelRects = new ArrayList<Rectangle2D>();
 			TextLayout labelLayout;
-			Point transPoint, origPoint;
-			Rectangle2D boundingRect = this.getBounds();
+			Point transPoint;
+			boundingRect = this.getBounds();
 			Rectangle2D labelBounds;
 			FontRenderContext frc = ((Graphics2D) g).getFontRenderContext();
+			Font f = diagram.getFont();
 			for (CircleContour cc : circles) {
 				if (useColors) {
 					Color col = cc.color();
@@ -273,7 +277,6 @@ public class CirclesPanel extends JPanel {
 				// TODO a proper way to place labels - it can't be a method in
 				// CircleContour,
 				// we need the context in the ConcreteDiagram
-				Font f = diagram.getFont();
 				if (f != null) {
 					((Graphics2D) g).setFont(f);
 				}
@@ -284,52 +287,18 @@ public class CirclesPanel extends JPanel {
 				 * JLabel jl = new JLabel("IGI"); jl.setFont(font);
 				 * jl.getWidth(); jl.getHeight(); jl.setLocation(arg0, arg1);
 				 */
-				// make a Rectangle2D from the label and check whether it
-				// overlaps
-				// any existing label (including a gap for readability). If it
-				// does,
-				// call CircleContour::nudgeLabelPoint until it doesn't
 				transPoint = transformPoint(trans, cc.getLabelPoint());
-				origPoint = new Point(transPoint);// keep track so we know when
-													// to give up
 				labelLayout = new TextLayout(cc.ac.getLabel().getLabel(), f,
 						frc);
 				labelBounds = setBoundsRect(labelLayout.getBounds(), transPoint);
-				// TODO nudge label while it overlaps with boundary
-
-				// nudge label while it overlaps with another label or the
-				// bounding rect.
-				// give up after a complete rotation
-				boolean overlap;
-				do {
-					overlap = false;
-					if (!boundingRect.contains(labelBounds)) {
-						overlap = true;
-					} else {
-						for (Rectangle2D r : labelRects) {
-							if (r.intersects(labelBounds.getMinX(),
-									labelBounds.getMinY(),
-									labelBounds.getWidth(),
-									labelBounds.getHeight())) {
-								overlap = true;
-								break;
-							}
-						}
-					}
-					if (overlap) {
-						transPoint = transformPoint(trans, cc.nudgeLabelPoint());
-						labelBounds = setBoundsRect(labelLayout.getBounds(),
-								transPoint);
-						if (transPoint.equals(origPoint))
-							overlap = false;// give up
-					}
-				} while (overlap);
+				positionLabel(labelBounds, transPoint, labelLayout, cc);
 				labelRects.add(labelBounds);
 				labelLayout.draw((Graphics2D) g, (float) transPoint.getX(),
 						(float) transPoint.getY());
 
 			}
 			g.setColor(Color.black);
+			ConcreteSpiderFoot labelFoot;
 			for (ConcreteSpider s : diagram.getSpiders()) {
 				for (ConcreteSpiderFoot foot : s.feet) {
 					Ellipse2D.Double blob = foot.getBlob();
@@ -349,14 +318,61 @@ public class CirclesPanel extends JPanel {
 				// TODO a proper way to place labels - it can't be a method in
 				// ConcreteSpider,
 				// we need the context in the ConcreteDiagram
-
-				// TODO nudge label while it overlaps with another label
-				((Graphics2D) g)
+				
+				labelFoot = s.feet.get(0);
+				transPoint = transformPoint(trans, labelFoot.getLabelPoint());
+				labelLayout = new TextLayout(labelFoot.getLabel(), f,
+						frc);
+				labelBounds = setBoundsRect(labelLayout.getBounds(), transPoint);
+				positionLabel(labelBounds, transPoint, labelLayout, labelFoot);
+				labelRects.add(labelBounds);
+				labelLayout.draw((Graphics2D) g, (float) transPoint.getX(),
+						(float) transPoint.getY());
+				
+				/*((Graphics2D) g)
 						.drawString(s.as.getName(), (int) ((s.feet.get(0)
 								.getX() - 5) * trans.getScaleX()),
 								(int) ((s.feet.get(0).getY() + 18) * trans
-										.getScaleY()));
+										.getScaleY()));*/
 			}
+		}
+		
+		/**
+		 * nudge label while it overlaps with another label or the bounding rect.
+		 * give up after a complete rotation
+		 * @param labelBounds
+		 * @param p
+		 * @param labelLayout
+		 * @param origPoint
+		 * @param cc
+		 */
+		private void positionLabel(Rectangle2D labelBounds, Point p, TextLayout labelLayout, Labellable cc) {
+			boolean overlap;
+			Point origPoint = new Point(p);// keep track so we know when
+			// to give up
+			do {
+				overlap = false;
+				if (!boundingRect.contains(labelBounds)) {
+					overlap = true;
+				} else {
+					for (Rectangle2D r : labelRects) {
+						if (r.intersects(labelBounds.getMinX(),
+								labelBounds.getMinY(),
+								labelBounds.getWidth(),
+								labelBounds.getHeight())) {
+							overlap = true;
+							break;
+						}
+					}
+				}
+				if (overlap) {
+					p.setLocation(transformPoint(trans, cc.nudgeLabelPoint()));
+					labelBounds = setBoundsRect(labelLayout.getBounds(),
+							p);
+					if (p.equals(origPoint))
+						overlap = false;// give up
+				}
+			} while (overlap);
 		}
 
 		private Point transformPoint(AffineTransform trans, Point p) {
