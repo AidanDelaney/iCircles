@@ -4,6 +4,7 @@ import icircles.abstractDescription.AbstractCurve;
 import icircles.util.DEB;
 
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.geom.Area;
@@ -18,6 +19,10 @@ public class CircleContour {
     double cy;
     double radius;
     double nudge = 0.1;
+    Point labelPoint;
+    double thetaDeg = 45D;
+    int angleNudge = 5;
+    final int LABEL_BUFF = 5;
     
     Color col;
     Stroke stroke;
@@ -99,12 +104,30 @@ public class CircleContour {
         return new Area(makeEllipse(cx, cy, radius + fatter));
     }
 
+    //TODO should be private, rely on the point
     public double getLabelXPosition() {
-        return cx + 0.8 * radius;
+    	double theta = Math.toRadians(thetaDeg);
+    	return cx + Math.cos(theta) * (radius + LABEL_BUFF);
     }
 
+    //TODO make private, rely on the point
     public double getLabelYPosition() {
-        return cy - 0.75 * radius;
+    	double theta = Math.toRadians(thetaDeg);
+    	return cy - Math.sin(theta) * (radius + LABEL_BUFF);
+    }
+    
+    public Point getLabelPoint() {
+    	if(labelPoint == null) {
+    		labelPoint = new Point((int)getLabelXPosition(), (int)getLabelYPosition());
+    	}
+    	return labelPoint;
+    }
+    
+    public Point nudgeLabelPoint() {
+    	thetaDeg += angleNudge;
+    	thetaDeg %= 360;
+    	labelPoint = new Point((int)getLabelXPosition(), (int)getLabelYPosition());
+    	return labelPoint;
     }
 
     public int getMinX() {
