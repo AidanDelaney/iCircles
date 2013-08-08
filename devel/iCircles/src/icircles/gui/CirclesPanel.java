@@ -274,19 +274,9 @@ public class CirclesPanel extends JPanel {
 				} else {
 					((Graphics2D) g).setStroke(new BasicStroke(2));
 				}
-				// TODO a proper way to place labels - it can't be a method in
-				// CircleContour,
-				// we need the context in the ConcreteDiagram
 				if (f != null) {
 					((Graphics2D) g).setFont(f);
 				}
-				/*
-				 * //TODO: ((Graphics2D) g).getFontMetrics(); // for a string???
-				 * // use the font metrics to adjust the anchor position
-				 * 
-				 * JLabel jl = new JLabel("IGI"); jl.setFont(font);
-				 * jl.getWidth(); jl.getHeight(); jl.setLocation(arg0, arg1);
-				 */
 				transPoint = transformPoint(trans, cc.getLabelPoint());
 				labelLayout = new TextLayout(cc.ac.getLabel().getLabel(), f,
 						frc);
@@ -315,25 +305,15 @@ public class CirclesPanel extends JPanel {
 				if (s.as.getName() == null) {
 					continue;
 				}
-				// TODO a proper way to place labels - it can't be a method in
-				// ConcreteSpider,
-				// we need the context in the ConcreteDiagram
 				
 				labelFoot = s.feet.get(0);
 				transPoint = transformPoint(trans, labelFoot.getLabelPoint());
-				labelLayout = new TextLayout(labelFoot.getLabel(), f,
-						frc);
+				labelLayout = new TextLayout(labelFoot.getLabel(), f, frc);
 				labelBounds = setBoundsRect(labelLayout.getBounds(), transPoint);
 				positionLabel(labelBounds, transPoint, labelLayout, labelFoot);
 				labelRects.add(labelBounds);
 				labelLayout.draw((Graphics2D) g, (float) transPoint.getX(),
 						(float) transPoint.getY());
-				
-				/*((Graphics2D) g)
-						.drawString(s.as.getName(), (int) ((s.feet.get(0)
-								.getX() - 5) * trans.getScaleX()),
-								(int) ((s.feet.get(0).getY() + 18) * trans
-										.getScaleY()));*/
 			}
 		}
 		
@@ -367,10 +347,8 @@ public class CirclesPanel extends JPanel {
 				}
 				if (overlap) {
 					p.setLocation(transformPoint(trans, cc.nudgeLabelPoint()));
-					labelBounds = setBoundsRect(labelLayout.getBounds(),
-							p);
-					if (p.equals(origPoint))
-						overlap = false;// give up
+					labelBounds = setBoundsRect(labelLayout.getBounds(), p);
+					if (p.equals(origPoint)) overlap = false;// give up
 				}
 			} while (overlap);
 		}

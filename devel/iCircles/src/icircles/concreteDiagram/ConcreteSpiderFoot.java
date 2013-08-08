@@ -11,9 +11,10 @@ public class ConcreteSpiderFoot implements Labellable {
     private double x;
     private double y;
     private ConcreteSpider spider;
-    private int labelBuffX = 5;
-    private int labelBuffY = 18;
-    private final int LABEL_NUDGE = 5;
+    private final int LABEL_BUFFX = 5;
+    private int labelBuffY = 18;//not a constant
+    private final int LABEL_NUDGE = 2;
+    private boolean flipped = false;
     private Point labelPoint;
     
 
@@ -95,15 +96,22 @@ public class ConcreteSpiderFoot implements Labellable {
 	@Override
 	public Point getLabelPoint() {
 		if(labelPoint == null) {
-			labelPoint = new Point((int) (getX() - labelBuffX), (int) (getY() + labelBuffY));
+			labelPoint = new Point((int) (getX() - LABEL_BUFFX), (int) (getY() + labelBuffY));
 		}
 		return labelPoint;
 	}
 
 	@Override
 	public Point nudgeLabelPoint() {
-		labelBuffY += LABEL_NUDGE;
-		labelPoint = new Point((int) (getX() - labelBuffX), (int) (getY() + labelBuffY));
+		//alternate between flipping the label from above to below the foot
+		//and nudging it
+		if(flipped) {
+			labelBuffY += LABEL_NUDGE;
+			labelPoint = new Point((int) (getX() - LABEL_BUFFX), (int) (getY() + labelBuffY));
+		} else {
+			labelPoint = new Point((int) (getX() - LABEL_BUFFX), (int) (getY() - labelBuffY));
+		}
+		flipped = !flipped;
 		return labelPoint;
 	}
 	
