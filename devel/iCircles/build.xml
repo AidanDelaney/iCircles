@@ -102,6 +102,8 @@ Build, test, run and package iCircles.
 
         <test name="icircles.input.TestSpider" />
       	<test name="icircles.input.TestInputParser" />
+
+        <test name="icircles.gui.TestSketchGeneration" />
       </junit>
     </target>
 
