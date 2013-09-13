@@ -1,4 +1,5 @@
 package icircles.abstractDescription;
+
 /*
  * @author Jean Flower <jeanflower@rocketmail.com>
  * Copyright (c) 2012
@@ -37,259 +38,295 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * {@link AbstractBasicRegion} maintains a collection of {@link AbstractBasicRegion} objects.
- *
- * You normally create an {@link AbstractBasicRegion} by calling {@link AbstractBasicRegion #get}
- * and pass in the set of {@link AbstractCurve} objects.  Normally you use {@link AbstractBasicRegion #get}
- * in conjunction with {@link AbstractCurve} as follows:
+ * {@link AbstractBasicRegion} maintains a collection of
+ * {@link AbstractBasicRegion} objects.
+ * 
+ * You normally create an {@link AbstractBasicRegion} by calling
+ * {@link AbstractBasicRegion #get} and pass in the set of {@link AbstractCurve}
+ * objects. Normally you use {@link AbstractBasicRegion #get} in conjunction
+ * with {@link AbstractCurve} as follows:
+ * 
  * <pre>
- * {@code
- * CurveLabel cl             = CurveLabel.get("Example");
- * AbstractCurve ac          = new AbstractCurve(cl);
- * Set<AbstractCurve> ts     = new TreeSet<AbstractCurve>();
- * ts.add(ac);
- * AbstractBasicRegion abr   = AbstractBasicRegion.get(ts);
+ * {
+ * 	&#064;code
+ * 	CurveLabel cl = CurveLabel.get(&quot;Example&quot;);
+ * 	AbstractCurve ac = new AbstractCurve(cl);
+ * 	Set&lt;AbstractCurve&gt; ts = new TreeSet&lt;AbstractCurve&gt;();
+ * 	ts.add(ac);
+ * 	AbstractBasicRegion abr = AbstractBasicRegion.get(ts);
  * }
  * </pre>
  */
 public class AbstractBasicRegion implements Comparable<AbstractBasicRegion> {
 
-    TreeSet<AbstractCurve> m_in_set;
-    static TreeSet<AbstractBasicRegion> m_library = new TreeSet<AbstractBasicRegion>();
+	private Set<AbstractCurve> m_in_set;
+	public static Set<AbstractBasicRegion> m_library = new TreeSet<AbstractBasicRegion>();
 
-    private AbstractBasicRegion(TreeSet<AbstractCurve> in_set) {
-        m_in_set = in_set;
-    }
+	public AbstractBasicRegion(Set<AbstractCurve> in_set) {
+		m_in_set = in_set;
+	}
 
-    public static AbstractBasicRegion get(Set<AbstractCurve> in_set) {
-        // TODO: This is quite an expensive way to look up already existing
-        // objects. This should definitely be replaced by 'contains'.
-        //
-        // I would suggest not to use the library at all.
-        for (AbstractBasicRegion alreadyThere : m_library) {
-            if (alreadyThere.m_in_set.equals(in_set)) {
-                return alreadyThere;
-            }
-        }
+	public static AbstractBasicRegion get(Set<AbstractCurve> in_set) {
+		// TODO: This is quite an expensive way to look up already existing
+		// objects. This should definitely be replaced by 'contains'.
+		//
+		// I would suggest not to use the library at all.
+		for (AbstractBasicRegion alreadyThere : m_library) {
+			if (alreadyThere.m_in_set.equals(in_set)) {
+				return alreadyThere;
+			}
+		}
 
-        TreeSet<AbstractCurve> tmp = new TreeSet<AbstractCurve>(in_set);
-        AbstractBasicRegion result = new AbstractBasicRegion(tmp);
-        m_library.add(result);
-        return result;
-    }
+		Set<AbstractCurve> tmp = new TreeSet<AbstractCurve>(in_set);
+		AbstractBasicRegion result = new AbstractBasicRegion(tmp);
+		m_library.add(result);
+		return result;
+	}
 
-    /**
-     * Given an {@link AbstractBasicRegion} inside an {@link AbstractCurve} it returns
-     * a copy of an {@link AbstractBasicRegion} where the passed {@link AbstractCurve} is
-     * removed.  In the case that the passed {@link AbstractCurve} is not a curve that
-     * this {@link AbstractBasicRegion} is inside then this {@link AbstractBasicRegion} is
-     * returned.
-     *
-     * Does not modify the object on which this method is called.
-     *
-     * @param c An {@link AbstractCurve} which this {@link AbstractBasicRegion} is inside
-     * @return an {@link AbstractBasicRegion} which has been moved outside c
-     */
-    public AbstractBasicRegion moveOutside(AbstractCurve c) {
-        if (m_in_set.contains(c)) {
-            TreeSet<AbstractCurve> contours = new TreeSet<AbstractCurve>(m_in_set);
-            contours.remove(c);
-            return get(contours);
-        } else {
-            return this;
-        }
-    }
+	/**
+	 * Given an {@link AbstractBasicRegion} inside an {@link AbstractCurve} it
+	 * returns a copy of an {@link AbstractBasicRegion} where the passed
+	 * {@link AbstractCurve} is removed. In the case that the passed
+	 * {@link AbstractCurve} is not a curve that this
+	 * {@link AbstractBasicRegion} is inside then this
+	 * {@link AbstractBasicRegion} is returned.
+	 * 
+	 * Does not modify the object on which this method is called.
+	 * 
+	 * @param c
+	 *            An {@link AbstractCurve} which this
+	 *            {@link AbstractBasicRegion} is inside
+	 * @return an {@link AbstractBasicRegion} which has been moved outside c
+	 */
+	public AbstractBasicRegion moveOutside(AbstractCurve c) {
+		if (m_in_set.contains(c)) {
+			TreeSet<AbstractCurve> contours = new TreeSet<AbstractCurve>(
+					m_in_set);
+			contours.remove(c);
+			return get(contours);
+		} else {
+			return this;
+		}
+	}
 
-    /**
-     * Allows two {@link AbstractBasicRegion} objects to be compared {@link Comparable #compareTo}
-     * @param other The {@link AbstractBasicRegion} to compareTo
-     * @return 1  if this {@link AbstractBasicRegion} contains more contours than other,
-     *         -1 if other contains more contours than this, and
-     *         the comparison of the interal contour sets otherwise.
-     */
-    public int compareTo(AbstractBasicRegion other) {
-        if (other.m_in_set.size() < m_in_set.size()) {
-            return 1;
-        } else if (other.m_in_set.size() > m_in_set.size()) {
-            return -1;
-        }
+	/**
+	 * Allows two {@link AbstractBasicRegion} objects to be compared
+	 * {@link Comparable #compareTo}
+	 * 
+	 * @param other
+	 *            The {@link AbstractBasicRegion} to compareTo
+	 * @return 1 if this {@link AbstractBasicRegion} contains more contours than
+	 *         other, -1 if other contains more contours than this, and the
+	 *         comparison of the interal contour sets otherwise.
+	 */
+	public int compareTo(AbstractBasicRegion other) {
+		if (other.m_in_set.size() < m_in_set.size()) {
+			return 1;
+		} else if (other.m_in_set.size() > m_in_set.size()) {
+			return -1;
+		}
 
-        // same sized in_set
-        Iterator<AbstractCurve> this_it = m_in_set.iterator();
-        Iterator<AbstractCurve> other_it = other.m_in_set.iterator();
+		// same sized in_set
+		Iterator<AbstractCurve> this_it = m_in_set.iterator();
+		Iterator<AbstractCurve> other_it = other.m_in_set.iterator();
 
-        while (this_it.hasNext()) {
-            AbstractCurve this_c = this_it.next();
-            AbstractCurve other_c = other_it.next();
-            int comp = this_c.compareTo(other_c);
-            if (comp != 0) {
-                return comp;
-            }
-        }
-        return 0;
-    }
+		while (this_it.hasNext()) {
+			AbstractCurve this_c = this_it.next();
+			AbstractCurve other_c = other_it.next();
+			int comp = this_c.compareTo(other_c);
+			if (comp != 0) {
+				return comp;
+			}
+		}
+		return 0;
+	}
 
-    public String debug() {
-        if (DEB.level == 0) {
-            return "";
-        }
-        StringBuilder b = new StringBuilder();
-        if (DEB.level > 1) {
-            b.append("(");
-        }
-        boolean first = true;
-        for (AbstractCurve c : m_in_set) {
-            if (!first && DEB.level > 1) {
-                b.append(",");
-            }
-            b.append(c.debug());
-            first = false;
-        }
-        if (DEB.level > 1) {
-            b.append(")");
-        }
-        if (DEB.level > 3) {
-            b.append(hashCode());
-        }
-        return b.toString();
-    }
-    public String journalString() {
-        if(m_in_set.isEmpty())
-            return ".";
-        
-        StringBuilder b = new StringBuilder();
-        for (AbstractCurve c : m_in_set) {
-            b.append(c.journalString());
-        }
-        return b.toString();
-    }
+	public String debug() {
+		if (DEB.level == 0) {
+			return "";
+		}
+		StringBuilder b = new StringBuilder();
+		if (DEB.level > 1) {
+			b.append("(");
+		}
+		boolean first = true;
+		for (AbstractCurve c : m_in_set) {
+			if (!first && DEB.level > 1) {
+				b.append(",");
+			}
+			b.append(c.debug());
+			first = false;
+		}
+		if (DEB.level > 1) {
+			b.append(")");
+		}
+		if (DEB.level > 3) {
+			b.append(hashCode());
+		}
+		return b.toString();
+	}
 
-    /**
-     * An Iterator over the {@link AbstractCurve} objects contained in this {@link AbstractBasicRegion}.
-     *
-     * @return The iterator.
-     */
-    public Iterator<AbstractCurve> getContourIterator() {
-        return m_in_set.iterator();
-    }
+	public String journalString() {
+		if (m_in_set.isEmpty())
+			return ".";
 
-    /**
-     * Returns the number of contours within which this {@link AbstractBasicRegion} is contained.
-     *
-     * @return the size of the internal store of {@link AbstractCurve} objects
-     */
-    public int getNumContours() {
-        return m_in_set.size();
-    }
+		StringBuilder b = new StringBuilder();
+		for (AbstractCurve c : m_in_set) {
+			b.append(c.journalString());
+		}
+		return b.toString();
+	}
 
-    /**
-     * A "straddled contour" is a contour which distinguishes two AbstractBasicRegion 
-     * objects.  Effectively, it is the difference between two contour sets, if
-     * and only if the difference is a single contour.
-     *
-     * @param other The AbstractBasicRegion to compare to.
-     * @return The straddled contour or null.
-     */
-    public AbstractCurve getStraddledContour(AbstractBasicRegion other) {
-        int nc = getNumContours();
-        int othernc = other.getNumContours();
-        if (Math.abs(nc - othernc) != 1) {
-            return null;
-        } else if (nc < othernc) {
-            return other.getStraddledContour(this);
-        } else {
-            // we have one more contour than other - are we neighbours?
-            AbstractCurve result = null;
-            Iterator<AbstractCurve> it = getContourIterator();
-            while (it.hasNext()) {
-                AbstractCurve ac = it.next();
-                if (!other.is_in(ac)) {
-                    if (result != null) {
-                        return null; // found two contours here absent from other
-                    } else {
-                        result = ac;
-                    }
-                }
-            }
-            if (DEB.level > 2) {
-                System.out.println("straddle : " + debug() + "->" + other.debug() + "=" + result.debug());
-            }
-            return result;
-        }
-    }
+	/**
+	 * An Iterator over the {@link AbstractCurve} objects contained in this
+	 * {@link AbstractBasicRegion}.
+	 * 
+	 * @return The iterator.
+	 */
+	public Iterator<AbstractCurve> getContourIterator() {
+		return m_in_set.iterator();
+	}
 
-    /**
-     * Moves an AbstractBasicRegion inside a given AbstractCurve.  It is the
-     * of {@link #moveOutside}.
-     *
-     * It's worth noting that this method does not modify the object that it
-     * is called on.
-     *
-     * @param newCont The curve to move an AbstractBasicRegion inside.
-     * @return a new AbstractBasicRegion inside all the AbstractCurve objects
-     *         that this is inside and also inside the passed AbstractCurve.
-     */
-    public AbstractBasicRegion moved_in(AbstractCurve newCont) {
-        TreeSet<AbstractCurve> conts = new TreeSet<AbstractCurve>(m_in_set);
-        conts.add(newCont);
-        return AbstractBasicRegion.get(conts);
-    }
+	/**
+	 * Returns the number of contours within which this
+	 * {@link AbstractBasicRegion} is contained.
+	 * 
+	 * @return the size of the internal store of {@link AbstractCurve} objects
+	 */
+	public int getNumContours() {
+		return m_in_set.size();
+	}
 
-    public boolean is_in(AbstractCurve c) {
-        return m_in_set.contains(c);
-    }
+	/**
+	 * A "straddled contour" is a contour which distinguishes two
+	 * AbstractBasicRegion objects. Effectively, it is the difference between
+	 * two contour sets, if and only if the difference is a single contour.
+	 * 
+	 * @param other
+	 *            The AbstractBasicRegion to compare to.
+	 * @return The straddled contour or null.
+	 */
+	public AbstractCurve getStraddledContour(AbstractBasicRegion other) {
+		int nc = getNumContours();
+		int othernc = other.getNumContours();
+		if (Math.abs(nc - othernc) != 1) {
+			return null;
+		} else if (nc < othernc) {
+			return other.getStraddledContour(this);
+		} else {
+			// we have one more contour than other - are we neighbours?
+			AbstractCurve result = null;
+			Iterator<AbstractCurve> it = getContourIterator();
+			while (it.hasNext()) {
+				AbstractCurve ac = it.next();
+				if (!other.is_in(ac)) {
+					if (result != null) {
+						return null; // found two contours here absent from
+										// other
+					} else {
+						result = ac;
+					}
+				}
+			}
+			if (DEB.level > 2) {
+				System.out.println("straddle : " + debug() + "->"
+						+ other.debug() + "=" + result.debug());
+			}
+			return result;
+		}
+	}
 
-    public double checksum() {
-        double result = 0.0;
-        double scaling = 3.1;
-        for (AbstractCurve c : m_in_set) {
-            result += c.checksum() * scaling;
-            scaling += 0.09;
-        }
-        return result;
-    }
-    
-    public static void clearLibrary() {
-        m_library.clear();
-    }
+	/**
+	 * Moves an AbstractBasicRegion inside a given AbstractCurve. It is the of
+	 * {@link #moveOutside}.
+	 * 
+	 * It's worth noting that this method does not modify the object that it is
+	 * called on.
+	 * 
+	 * @param newCont
+	 *            The curve to move an AbstractBasicRegion inside.
+	 * @return a new AbstractBasicRegion inside all the AbstractCurve objects
+	 *         that this is inside and also inside the passed AbstractCurve.
+	 */
+	public AbstractBasicRegion moved_in(AbstractCurve newCont) {
+		Set<AbstractCurve> conts = new TreeSet<AbstractCurve>(m_in_set);
+		conts.add(newCont);
+		return AbstractBasicRegion.get(conts);
+	}
 
-    /**
-     * Compares the label equivalence of two AbstractBasicRegion objects.  The
-     * label equivalence ensures that the labels in this AbstractBasicRegion are
-     * exactly those which are contained in the passed in AbstractBasicRegion.
-     *
-     * This is necessarily O(n^2) + the complexity to access the internal data
-     * structure, where n is the number of AbsractCurve objects in the region.
-     *
-     * @param z The AbstractBasicRegion to compare label equivalence.
-     * @return True if the regions are label equivalent, false otherwise.
-     */
-    public boolean isLabelEquivalent(AbstractBasicRegion z) {
-        if (getNumContours() == z.getNumContours()) {
-            if (z.getNumContours() == 0) {
-                return true;
-            } else {
-                //System.out.println(" compare zones "+debug()+" and "+z.debug());
-                Iterator<AbstractCurve> acIt = getContourIterator();
-                AcItLoop:
-                while (acIt.hasNext()) {
-                    AbstractCurve thisAC = acIt.next();
-                    // look for an AbstractCurve in z with the same label
-                    Iterator<AbstractCurve> acIt2 = z.getContourIterator();
-                    while (acIt2.hasNext()) {
-                        AbstractCurve thatAC = acIt2.next();
-                        //System.out.println(" compare abstract contours "+thisAC.debug()+" and "+thatAC.debug());
-                        if (thisAC.matches_label(thatAC)) {
-                            //System.out.println(" got match ");
-                            continue AcItLoop;
-                        }
-                    }
-                    //System.out.println(" no match for "+thisAC.debug());
-                    return false;
-                }
-                return true;
-            }
-        }
-        return false;
-    }
+	public boolean is_in(AbstractCurve c) {
+		return m_in_set.contains(c);
+	}
+
+	public double checksum() {
+		double result = 0.0;
+		double scaling = 3.1;
+		for (AbstractCurve c : m_in_set) {
+			result += c.checksum() * scaling;
+			scaling += 0.09;
+		}
+		return result;
+	}
+
+	public static void clearLibrary() {
+		m_library.clear();
+	}
+
+	/**
+	 * Compares the label equivalence of two AbstractBasicRegion objects. The
+	 * label equivalence ensures that the labels in this AbstractBasicRegion are
+	 * exactly those which are contained in the passed in AbstractBasicRegion.
+	 * 
+	 * This is necessarily O(n^2) + the complexity to access the internal data
+	 * structure, where n is the number of AbsractCurve objects in the region.
+	 * 
+	 * @param z
+	 *            The AbstractBasicRegion to compare label equivalence.
+	 * @return True if the regions are label equivalent, false otherwise.
+	 */
+	public boolean isLabelEquivalent(AbstractBasicRegion z) {
+		if (getNumContours() == z.getNumContours()) {
+			if (z.getNumContours() == 0) {
+				return true;
+			} else {
+				// System.out.println(" compare zones "+debug()+" and "+z.debug());
+				Iterator<AbstractCurve> acIt = getContourIterator();
+				AcItLoop: while (acIt.hasNext()) {
+					AbstractCurve thisAC = acIt.next();
+					// look for an AbstractCurve in z with the same label
+					Iterator<AbstractCurve> acIt2 = z.getContourIterator();
+					while (acIt2.hasNext()) {
+						AbstractCurve thatAC = acIt2.next();
+						// System.out.println(" compare abstract contours "+thisAC.debug()+" and "+thatAC.debug());
+						if (thisAC.matches_label(thatAC)) {
+							// System.out.println(" got match ");
+							continue AcItLoop;
+						}
+					}
+					// System.out.println(" no match for "+thisAC.debug());
+					return false;
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public Set<AbstractCurve> getInSet() {
+		return m_in_set;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("[");
+		if (!m_in_set.isEmpty()) {
+			for (AbstractCurve c : m_in_set) {
+				sb.append(c.toString());
+				sb.append(",");
+			}
+			sb.deleteCharAt(sb.length() - 1);
+		}
+		sb.append("]");
+		return sb.toString();
+	}
 }

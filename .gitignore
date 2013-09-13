@@ -1,4 +1,5 @@
 *.class
+TEST*.txt
 
 # Package Files #
 *.jar
