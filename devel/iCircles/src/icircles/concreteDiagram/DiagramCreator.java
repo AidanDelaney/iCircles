@@ -502,6 +502,26 @@ public class DiagramCreator {
 		return foot_on_leg;
 	}
 
+	private HashMap<AbstractBasicRegion, Integer> getABRFootCount() {
+	 // For each zone = AbstractBasicRegion, count how many spider feet
+        // fall in that zone.
+        HashMap<AbstractBasicRegion, Integer> footCount = new HashMap<AbstractBasicRegion, Integer>();
+        Iterator<AbstractSpider> it = abstractDiagram.getSpiderIterator();
+        while (it.hasNext()) {
+            AbstractSpider as = it.next();
+            for (AbstractBasicRegion abr : as.get_feet()) {
+                Integer oldCount = footCount.get(abr);
+                Integer newCount = null;
+                if (oldCount != null) {
+                    newCount = new Integer(oldCount.intValue() + 1);
+                } else {
+                    newCount = new Integer(1);
+                }
+                footCount.put(abr, newCount);
+            }
+        }
+        return footCount;
+	}
 	/**
 	 * Given a set of drawnCircles and a list of AbstractSpiders, choose spider
 	 * feet and legs to make up ConcreteSpiders in the ConcreteDiagram.
@@ -511,24 +531,8 @@ public class DiagramCreator {
 	 */
 	private ArrayList<ConcreteSpider> createSpiders()
 			throws CannotDrawException {
+        HashMap<AbstractBasicRegion, Integer> footCount = getABRFootCount();
 
-		// For each zone = AbstractBasicRegion, count how many spider feet
-		// fall in that zone.
-		HashMap<AbstractBasicRegion, Integer> footCount = new HashMap<AbstractBasicRegion, Integer>();
-		Iterator<AbstractSpider> it = abstractDiagram.getSpiderIterator();
-		while (it.hasNext()) {
-			AbstractSpider as = it.next();
-			for (AbstractBasicRegion abr : as.get_feet()) {
-				Integer oldCount = footCount.get(abr);
-				Integer newCount = null;
-				if (oldCount != null) {
-					newCount = new Integer(oldCount.intValue() + 1);
-				} else {
-					newCount = new Integer(1);
-				}
-				footCount.put(abr, newCount);
-			}
-		}
 		// Build some feet. This is achieved by treating each foot as
 		// a very small contour - we reuse the code that puts nested
 		// contours inside zones.
