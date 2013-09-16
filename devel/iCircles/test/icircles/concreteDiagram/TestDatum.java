@@ -13,11 +13,11 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class TestDatum {
-
     public String description;
     //public int decomp_strategy;
     //public int recomp_strategy;
     public double expected_checksum;
+    LiteCircleContour [] expected_circles = null;
 
     public TestDatum(String string, 
             //int decomp_strategy,
@@ -27,6 +27,12 @@ public class TestDatum {
         //this.decomp_strategy = decomp_strategy;
         //this.recomp_strategy = recomp_strategy;
         expected_checksum = checksum;
+    }
+
+    public TestDatum(String s, double csum, LiteCircleContour... ls) {
+        this.description       = s;
+        this.expected_checksum = csum;
+        this.expected_circles  = ls;
     }
 
     /**

@@ -99,6 +99,7 @@ Build, test, run and package iCircles.
         <test name="icircles.abstractDescription.TestAbstractDescription" />
 
         <test name="icircles.concreteDiagram.TestConcreteDiagram" />
+        <test name="icircles.concreteDiagram.TestDiagramCreator" />
 
         <test name="icircles.input.TestSpider" />
       	<test name="icircles.input.TestInputParser" />

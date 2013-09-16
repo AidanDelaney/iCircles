@@ -502,8 +502,9 @@ public class DiagramCreator {
 		return foot_on_leg;
 	}
 
-	private HashMap<AbstractBasicRegion, Integer> getABRFootCount() {
-	 // For each zone = AbstractBasicRegion, count how many spider feet
+    // Class and Package scope method.
+    HashMap<AbstractBasicRegion, Integer> getABRFootCount() {
+        // For each zone = AbstractBasicRegion, count how many spider feet
         // fall in that zone.
         HashMap<AbstractBasicRegion, Integer> footCount = new HashMap<AbstractBasicRegion, Integer>();
         Iterator<AbstractSpider> it = abstractDiagram.getSpiderIterator();
@@ -582,7 +583,7 @@ public class DiagramCreator {
 		// TODO collect good choices of feet into spiders
 		// for now, we just pick feet which are in the right zones.
 		ArrayList<ConcreteSpider> result = new ArrayList<ConcreteSpider>();
-		it = abstractDiagram.getSpiderIterator();
+		Iterator<AbstractSpider> it = abstractDiagram.getSpiderIterator();
 		ArrayList<ConcreteSpider> spiders = new ArrayList<ConcreteSpider>();
 		HashMap<ConcreteSpiderFoot, AbstractBasicRegion> feet_and_zones = new HashMap<ConcreteSpiderFoot, AbstractBasicRegion>();
 		while (it.hasNext()) {
