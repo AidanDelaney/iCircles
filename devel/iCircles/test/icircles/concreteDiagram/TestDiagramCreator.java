@@ -86,7 +86,7 @@ public class TestDiagramCreator {
         Vector<TestDatum[]> v = new Vector<TestDatum[]>();
 
         for(TestDatum td : TestData.test_data) {
-            v.add(new TestDatum[]{ new TestDatum(td.toJSON(), td.expected_checksum, td.expected_circles)});
+            v.add(new TestDatum[]{ new TestDatum(td.description, td.expected_checksum, td.expected_circles)});
         }
       return v;
     }
@@ -97,7 +97,7 @@ public class TestDiagramCreator {
         m.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
         AbstractDiagram ad = null;
         try {
-            ad = m.readValue(datum.description, AbstractDiagram.class);
+            ad = m.readValue(datum.toJSON(), AbstractDiagram.class);
         } catch (IOException e) { // JsonParseException | JsonMappingException
             e.printStackTrace();
             assertTrue(false);
@@ -109,8 +109,6 @@ public class TestDiagramCreator {
             // foreach circle in the TestDatum, compare it with the
             // corresponding circle in the ConcreteDiagram;
             for(int i = 0; i < cd.circles.size(); i++) {
-                if(null == datum.expected_circles) // TODO: remove this null check when all tests have a LiteCircleContour component.
-                    break;
                 LiteCircleContour lcc = datum.expected_circles[i];
                 CircleContour      cc = cd.circles.get(i);
                 assertEquals(lcc.cx, cc.cx, EPSILON);
