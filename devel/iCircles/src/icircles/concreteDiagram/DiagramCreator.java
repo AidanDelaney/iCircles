@@ -4,6 +4,7 @@ import icircles.abstractDescription.AbstractBasicRegion;
 import icircles.abstractDescription.AbstractCurve;
 import icircles.abstractDescription.AbstractDescription;
 import icircles.abstractDescription.AbstractSpider;
+import icircles.concreteDiagram.BuildStep.Piercing;
 import icircles.decomposition.Decomposer;
 import icircles.decomposition.DecompositionStep;
 import icircles.decomposition.DecompositionStrategy;
@@ -277,7 +278,7 @@ class JeansBuildStepMaker implements BuildStepMaker {
 					beforefuturebs = beforefuturebs.next;
 				}// loop through futurebs's to see if we insert another
 			}// check - are we adding a nested contour?
-			else if (bs.recomp_data.get(0).split_zones.size() == 2) {// we are
+			else if (bs.getType() == BuildStep.Piercing.ONE_PIERCING) {// we are
 																		// adding
 																		// a
 																		// 1-piercing
@@ -900,7 +901,7 @@ public class DiagramCreator {
 			// A BuildStep corresponds to one or more RecompositionSteps.
 			if (thisBuildStep.recomp_data.size() > 1) {
 				// We have chosen to draw more than one circle at once.
-				if (thisBuildStep.recomp_data.get(0).split_zones.size() == 1) {
+				if (thisBuildStep.getType() == BuildStep.Piercing.NESTED_PIERCING) {
 					// We have chosen to draw more than one nested
 					// circle in a zone all at once.
 
@@ -947,7 +948,7 @@ public class DiagramCreator {
 						thisBuildStep = thisBuildStep.next;
 						continue stepLoop;
 					}
-				} else if (thisBuildStep.recomp_data.get(0).split_zones.size() == 2) {
+				} else if (thisBuildStep.getType() == BuildStep.Piercing.ONE_PIERCING) {
 					// We are seeking to place multiple 1-piercings around
 					// between a pair of adjacent "split zones".
 
@@ -1126,7 +1127,7 @@ public class DiagramCreator {
 					boolean will_pierce = false;
 					BuildStep future_bs = buildStepsHead.next;
 					while (future_bs != null) {
-						if (future_bs.recomp_data.get(0).split_zones.size() == 2) {
+						if (future_bs.getType() == Piercing.ONE_PIERCING) {
 							AbstractBasicRegion abr0 = future_bs.recomp_data
 									.get(0).split_zones.get(0);
 							AbstractBasicRegion abr1 = future_bs.recomp_data
