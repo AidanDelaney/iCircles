@@ -5,6 +5,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import icircles.abstractDescription.AbstractBasicRegion;
 import icircles.abstractDescription.AbstractCurve;
@@ -151,6 +152,130 @@ public class PiercingDrawer {
         }
 // TODO: make colour assignments work        assignCircleColour(c);
         drawnCircles.add(c);
+    }
+
+    public static boolean doSinglePiercing(RecompData rd, Map<AbstractCurve, CircleContour> abstractToConcreteContourMap, ArrayList<CircleContour> drawnCircles, double smallestRadius, double suggested_rad, GuideSizeStrategy guideSizes) throws CannotDrawException {
+        // add a single
+        // piercing---------------------------------------------------
+        AbstractCurve ac = rd.added_curve;
+        Rectangle2D.Double outerBox = CircleContour
+                .makeBigOuterBox(drawnCircles);
+
+        if (DEB.level > 3) {
+            System.out.println("make a single-piercing contour");
+        }
+        AbstractBasicRegion abr0 = rd.split_zones.get(0);
+        AbstractBasicRegion abr1 = rd.split_zones.get(1);
+        AbstractCurve c = abr0.getStraddledContour(abr1);
+        CircleContour cc = abstractToConcreteContourMap.get(c);
+        ConcreteZone cz0 = makeConcreteZone(abr0, abstractToConcreteContourMap, drawnCircles);
+        ConcreteZone cz1 = makeConcreteZone(abr1, abstractToConcreteContourMap, drawnCircles);
+        Area a = new Area(cz0.getShape(outerBox));
+
+        /*DEB.show(4, a, "for single piercing first half "
+                + debugImageNumber);
+        DEB.show(4, new Area(cz1.getShape(outerBox)),
+                "for single piercing second half "
+                        + debugImageNumber);*/
+        a.add(cz1.getShape(outerBox));
+
+        //DEB.show(4, a, "for single piercing " + debugImageNumber);
+
+        // We have made a piercing which is centred on the
+        // circumference of circle c.
+        // but if the contents of rd.addedCurve are not equally
+        // balanced between
+        // things inside c and things outside, we may end up
+        // squashing lots
+        // into half of rd.addedCurve, leaving the other half
+        // looking empty.
+        // See if we can nudge c outwards or inwards to accommodate
+        // its contents.
+
+        // iterate through zoneScores, looking for zones inside c,
+        // then ask whether they are inside or outside cc. If we
+        // get a big score outside, then try to move c outwards.
+
+        // HashMap<AbstractBasicRegion, Double> zoneScores;
+        double score_in_c = 0.0;
+        double score_out_of_c = 0.0;
+
+        double center_of_circle_lies_on_rad = cc.radius;
+        double smallest_allowed_rad = smallestRadius;
+
+        Set<AbstractBasicRegion> allZones = guideSizes
+                .getScoredZones();
+        for (AbstractBasicRegion abr : allZones) {
+            DEB.out(1,
+                    "compare " + abr.debug() + " against "
+                            + c.debug());
+            if (!abr.is_in(rd.added_curve)) {
+                continue;
+            }
+            DEB.out(1, "OK " + abr.debug() + " is in " + c.debug()
+                    + ", so compare against " + cc.debug());
+            if (abr.is_in(c)) {
+                score_in_c += guideSizes.getGuideSize(abr);
+            } else {
+                score_out_of_c += guideSizes.getGuideSize(abr);
+            }
+        }
+        DEB.out(3, "scores for " + c + " are inside=" + score_in_c
+                + " and outside=" + score_out_of_c);
+
+        if (score_out_of_c > score_in_c) {
+            double nudge = suggested_rad * 0.3;
+            smallest_allowed_rad += nudge;
+            center_of_circle_lies_on_rad += nudge;
+        } else if (score_out_of_c < score_in_c) {
+            double nudge = Math.min(suggested_rad * 0.3,
+                    (cc.radius * 2 - suggested_rad) * 0.5);
+            smallest_allowed_rad += nudge;
+            center_of_circle_lies_on_rad -= nudge;
+        }
+
+        // now place circles around cc, checking whether they fit
+        // into a
+        CircleContour solution = null;
+        for (AngleIterator ai = new AngleIterator(); ai.hasNext();) {
+            double angle = ai.nextAngle();
+            double x = cc.cx + Math.cos(angle)
+                    * center_of_circle_lies_on_rad;
+            double y = cc.cy + Math.sin(angle)
+                    * center_of_circle_lies_on_rad;
+            if (a.contains(x, y)) {
+                // how big a circle can we make?
+                double start_rad;
+                if (solution != null) {
+                    start_rad = solution.radius + smallestRadius;
+                } else {
+                    start_rad = smallestRadius;
+                }
+                CircleContour attempt = growCircleContour(a,
+                        rd.added_curve, x, y, suggested_rad,
+                        start_rad, smallest_allowed_rad);
+                if (attempt != null) {
+                    solution = attempt;
+                    if (solution.radius == guideSizes
+                            .getGuideSize(ac)) {
+                        break; // no need to try any more
+                    }
+                }
+
+            }// check that the centre is ok
+        }// loop for different centre placement
+        if (solution == null) // no single piercing found which was
+                                // OK
+        {
+            throw new CannotDrawException("1-peircing no fit");
+        } else {
+            DEB.out(2, "added a single piercing labelled "
+                    + solution.ac.getLabel());
+            abstractToConcreteContourMap.put(rd.added_curve,
+                    solution);
+            addCircle(drawnCircles, solution);
+        }
+        return true;
     }
 
     public static boolean doDoublePiercing(RecompData rd, Map<AbstractCurve, CircleContour> abstractToConcreteContourMap, ArrayList<CircleContour> drawnCircles, double smallestRadius, double suggested_rad) throws CannotDrawException {
