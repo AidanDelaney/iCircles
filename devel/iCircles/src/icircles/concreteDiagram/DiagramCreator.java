@@ -1298,72 +1298,7 @@ public class DiagramCreator {
 						addCircle(solution);
 					}
 				} else {
-					// double piercing
-					AbstractBasicRegion abr0 = rd.split_zones.get(0);
-					AbstractBasicRegion abr1 = rd.split_zones.get(1);
-					AbstractBasicRegion abr2 = rd.split_zones.get(2);
-					AbstractBasicRegion abr3 = rd.split_zones.get(3);
-					AbstractCurve c1 = abr0.getStraddledContour(abr1);
-					AbstractCurve c2 = abr0.getStraddledContour(abr2);
-					CircleContour cc1 = abstractToConcreteContourMap.get(c1);
-					CircleContour cc2 = abstractToConcreteContourMap.get(c2);
-
-					double[][] intn_coords = intersctCircles(cc1.cx, cc1.cy,
-							cc1.radius, cc2.cx, cc2.cy, cc2.radius);
-					if (intn_coords == null) {
-						System.out
-								.println("double piercing on non-intersecting circles");
-						return false;
-					}
-
-					ConcreteZone cz0 = makeConcreteZone(abr0);
-					ConcreteZone cz1 = makeConcreteZone(abr1);
-					ConcreteZone cz2 = makeConcreteZone(abr2);
-					ConcreteZone cz3 = makeConcreteZone(abr3);
-					Area a = new Area(cz0.getShape(outerBox));
-					a.add(cz1.getShape(outerBox));
-					a.add(cz2.getShape(outerBox));
-					a.add(cz3.getShape(outerBox));
-
-					DEB.show(4, a, "for double piercing " + debugImageNumber);
-
-					double cx, cy;
-					if (a.contains(intn_coords[0][0], intn_coords[0][1])) {
-						if (DEB.level > 2) {
-							System.out.println("intn at (" + intn_coords[0][0]
-									+ "," + intn_coords[0][1] + ")");
-						}
-						cx = intn_coords[0][0];
-						cy = intn_coords[0][1];
-					} else if (a.contains(intn_coords[1][0], intn_coords[1][1])) {
-						if (DEB.level > 2) {
-							System.out.println("intn at (" + intn_coords[1][0]
-									+ "," + intn_coords[1][1] + ")");
-						}
-						cx = intn_coords[1][0];
-						cy = intn_coords[1][1];
-					} else {
-						if (DEB.level > 2) {
-							System.out
-									.println("no suitable intn for double piercing");
-						}
-						throw new CannotDrawException("2peircing + disjoint");
-					}
-
-					CircleContour solution = growCircleContour(a,
-							rd.added_curve, cx, cy, suggested_rad,
-							smallestRadius, smallestRadius);
-					if (solution == null) // no double piercing found which was
-											// OK
-					{
-						throw new CannotDrawException("2peircing no fit");
-					} else {
-						DEB.out(2, "added a double piercing labelled "
-								+ solution.ac.getLabel());
-						abstractToConcreteContourMap.put(rd.added_curve,
-								solution);
-						addCircle(solution);
-					}
+				    PiercingDrawer.doDoublePiercing(rd, abstractToConcreteContourMap, drawnCircles, smallestRadius, suggested_rad);
 				}// if/else/else about piercing type
 			}// next RecompData in the BuildStep
 			thisBuildStep = thisBuildStep.next;
