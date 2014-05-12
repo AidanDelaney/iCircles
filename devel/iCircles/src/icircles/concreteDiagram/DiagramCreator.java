@@ -571,7 +571,7 @@ public class DiagramCreator {
 			// nested contours inside this zone. That will give us
 			// circle centers to use for spider feet positions.
 			ArrayList<CircleContour> cs = placeContours(box, smallestRadius, 3,
-					zone_in_last_diag, last_diag, acs, 3);
+					zone_in_last_diag, last_diag, acs);
 			for (CircleContour cc : cs) {
 				footList.add(new ConcreteSpiderFoot(cc.cx, cc.cy));
 			}
@@ -930,7 +930,7 @@ public class DiagramCreator {
 					// in our zone.
 					ArrayList<CircleContour> cs = placeContours(outerBox,
 							smallestRadius, suggested_rad, zone, last_diag,
-							acs, debugImageNumber);
+							acs);
 
 					if (cs != null && cs.size() > 0) {
 						DEB.assertCondition(
@@ -1121,64 +1121,7 @@ public class DiagramCreator {
 				if (rd.split_zones.size() == 1) {
 					// add a nested
 					// contour---------------------------------------------------
-
-					// look ahead - are we going to add a piercing to this?
-					// if so, push it to one side to make space
-					boolean will_pierce = false;
-					BuildStep future_bs = buildStepsHead.next;
-					while (future_bs != null) {
-						if (future_bs.getType() == Piercing.ONE_PIERCING) {
-							AbstractBasicRegion abr0 = future_bs.recomp_data
-									.get(0).split_zones.get(0);
-							AbstractBasicRegion abr1 = future_bs.recomp_data
-									.get(0).split_zones.get(1);
-							AbstractCurve ac_future = abr0
-									.getStraddledContour(abr1);
-							if (ac_future == ac) {
-								will_pierce = true;
-								break;
-							}
-						}
-						future_bs = future_bs.next;
-					}
-
-					if (DEB.level > 3) {
-						System.out.println("make a nested contour");
-					}
-					// make a circle inside containingCircles, outside
-					// excludingCirles.
-
-					AbstractBasicRegion zone = rd.split_zones.get(0);
-
-					RecompositionStep last_step = recompSteps.get(recompSteps
-							.size() - 1);
-					AbstractDescription last_diag = last_step.to();
-
-					// put contour into a zone
-					CircleContour c = findCircleContour(outerBox,
-							smallestRadius, suggested_rad, zone, last_diag, ac,
-							debugImageNumber);
-
-					if (c == null) {
-						throw new CannotDrawException(
-								"cannot place nested contour");
-					}
-
-					if (will_pierce
-							&& rd.split_zones.get(0).getNumContours() > 0) {
-						// nudge to the left
-						c.cx -= c.radius * 0.5;
-
-						ConcreteZone cz = makeConcreteZone(rd.split_zones
-								.get(0));
-						Area a = new Area(cz.getShape(outerBox));
-						if (!circleInArea(c, a)) {
-							c.cx += c.radius * 0.25;
-							c.radius *= 0.75;
-						}
-					}
-					abstractToConcreteContourMap.put(ac, c);
-					addCircle(c);
+				    PiercingDrawer.doNestedPiercing(rd, abstractToConcreteContourMap, drawnCircles, smallestRadius, suggested_rad, buildStepsHead, recompSteps);
 				} else if (rd.split_zones.size() == 2) {
 				    PiercingDrawer.doSinglePiercing(rd, abstractToConcreteContourMap, drawnCircles, smallestRadius, suggested_rad, guideSizes);
 				} else {
@@ -1271,35 +1214,6 @@ public class DiagramCreator {
 	}
 
 	/**
-	 * A wrapper function around placeContours which has an interface for
-	 * placing just one contour.
-	 * 
-	 * @param outerBox
-	 * @param smallest_rad
-	 * @param guide_rad
-	 * @param zone
-	 * @param last_diag
-	 * @param ac
-	 * @param debug_index
-	 * @return
-	 * @throws CannotDrawException
-	 */
-	private CircleContour findCircleContour(Rectangle2D.Double outerBox,
-			int smallest_rad, double guide_rad, AbstractBasicRegion zone,
-			AbstractDescription last_diag, AbstractCurve ac, int debug_index)
-			throws CannotDrawException {
-		ArrayList<AbstractCurve> acs = new ArrayList<AbstractCurve>();
-		acs.add(ac);
-		ArrayList<CircleContour> result = placeContours(outerBox, smallest_rad,
-				guide_rad, zone, last_diag, acs, debug_index);
-		if (result == null || result.size() == 0) {
-			return null;
-		} else {
-			return result.get(0);
-		}
-	}
-
-	/**
 	 * Scan an array of PotentialCentres and find out whether all in a given
 	 * sub-array are flagged as "ok".
 	 * 
@@ -1328,7 +1242,7 @@ public class DiagramCreator {
 	private ArrayList<CircleContour> placeContours(Rectangle2D.Double outerBox,
 			int smallestRadius, double guideRadius, AbstractBasicRegion zone,
 			AbstractDescription lastDiagram,
-			ArrayList<AbstractCurve> abstractCurves, int debugIndex)
+			ArrayList<AbstractCurve> abstractCurves)
 			throws CannotDrawException {
 		ArrayList<CircleContour> result = new ArrayList<CircleContour>();
 
@@ -1429,7 +1343,7 @@ public class DiagramCreator {
 					"cannot put a nested contour into an empty region");
 		}
 
-		DEB.show(4, a, "area for " + debugIndex);
+//		DEB.show(4, a, "area for " + debugIndex);
 
 		// special case : one contour inside another with no other interference
 		// between

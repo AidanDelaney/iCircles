@@ -3,13 +3,17 @@ package icircles.concreteDiagram;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 import icircles.abstractDescription.AbstractBasicRegion;
 import icircles.abstractDescription.AbstractCurve;
+import icircles.abstractDescription.AbstractDescription;
+import icircles.concreteDiagram.BuildStep.Piercing;
 import icircles.recomposition.RecompData;
+import icircles.recomposition.RecompositionStep;
 import icircles.util.CannotDrawException;
 import icircles.util.DEB;
 
@@ -152,6 +156,224 @@ public class PiercingDrawer {
         }
 // TODO: make colour assignments work        assignCircleColour(c);
         drawnCircles.add(c);
+    }
+
+    /**
+     * Checks to see if any of the subsequent build steps will cause a piercing
+     * of the passed in AbstractCurve.
+     * @param bs
+     * @return
+     */
+    private static boolean willPierce(BuildStep bs, AbstractCurve ac) {
+        // look ahead - are we going to add a piercing to this?
+        // if so, push it to one side to make space
+        BuildStep future_bs = bs.next;
+        while (future_bs != null) {
+            if (future_bs.getType() == Piercing.ONE_PIERCING) {
+                AbstractBasicRegion abr0 = future_bs.recomp_data
+                        .get(0).split_zones.get(0);
+                AbstractBasicRegion abr1 = future_bs.recomp_data
+                        .get(0).split_zones.get(1);
+                AbstractCurve ac_future = abr0
+                        .getStraddledContour(abr1);
+                if (ac_future == ac) {
+                    return true;
+                }
+            }
+            future_bs = future_bs.next;
+        }
+        return false;
+    }
+
+    private static ArrayList<CircleContour> placeContours(Rectangle2D.Double outerBox,
+            int smallestRadius, double guideRadius, AbstractBasicRegion zone,
+            AbstractDescription lastDiagram,
+            ArrayList<AbstractCurve> abstractCurves,
+            HashMap<AbstractCurve, CircleContour> abstractToConcreteContourMap,
+            ArrayList<CircleContour> drawnCircles)
+            throws CannotDrawException {
+        ArrayList<CircleContour> result = new ArrayList<CircleContour>();
+
+        // special case : handle the drawing if it's the first contour(s)
+        boolean is_first_contour = !abstractToConcreteContourMap.keySet()
+                .iterator().hasNext();
+        if (is_first_contour) {
+            int label_index = 0;
+            for (AbstractCurve ac : abstractCurves) {
+                result.add(new CircleContour(outerBox.getCenterX() - 0.5
+                        * (guideRadius * 3 * abstractCurves.size()) + 1.5
+                        * guideRadius + guideRadius * 3 * label_index, outerBox
+                        .getCenterY(), guideRadius, ac));
+                label_index++;
+            }
+            DEB.out(2, "added first contours into diagram, labelled "
+                    + abstractCurves.get(0).getLabel());
+            return result;
+        }
+
+        // general case : it's (they're) not our first contour
+        if (zone.getNumContours() == 0) {
+            // adding contour(s) outside everything else
+            double minx = Double.MAX_VALUE;
+            double maxx = Double.MIN_VALUE;
+            double miny = Double.MAX_VALUE;
+            double maxy = Double.MIN_VALUE;
+
+            for (CircleContour c : drawnCircles) {
+                if (c.getMinX() < minx) {
+                    minx = c.getMinX();
+                }
+                if (c.getMaxX() > maxx) {
+                    maxx = c.getMaxX();
+                }
+                if (c.getMinY() < miny) {
+                    miny = c.getMinY();
+                }
+                if (c.getMaxY() > maxy) {
+                    maxy = c.getMaxY();
+                }
+            }
+            if (abstractCurves.size() == 1) {
+                if (maxx - minx < maxy - miny) {// R
+                    result.add(new CircleContour(maxx + guideRadius * 1.5,
+                            (miny + maxy) * 0.5, guideRadius, abstractCurves
+                                    .get(0)));
+                } else {// B
+                    result.add(new CircleContour((minx + maxx) * 0.5, maxy
+                            + guideRadius * 1.5, guideRadius, abstractCurves
+                            .get(0)));
+                }
+            } else if (abstractCurves.size() == 2) {
+                if (maxx - minx < maxy - miny) {// R
+                    result.add(new CircleContour(maxx + guideRadius * 1.5,
+                            (miny + maxy) * 0.5, guideRadius, abstractCurves
+                                    .get(0)));
+                    result.add(new CircleContour(minx - guideRadius * 1.5,
+                            (miny + maxy) * 0.5, guideRadius, abstractCurves
+                                    .get(1)));
+                } else {// T
+                    result.add(new CircleContour((minx + maxx) * 0.5, maxy
+                            + guideRadius * 1.5, guideRadius, abstractCurves
+                            .get(0)));
+                    result.add(new CircleContour((minx + maxx) * 0.5, miny
+                            - guideRadius * 1.5, guideRadius, abstractCurves
+                            .get(1)));
+                }
+            } else {
+                if (maxx - minx < maxy - miny) {// R
+                    double lowy = (miny + maxy) * 0.5 - 0.5
+                            * abstractCurves.size() * guideRadius * 3
+                            + guideRadius * 1.5;
+                    for (int i = 0; i < abstractCurves.size(); i++) {
+                        result.add(new CircleContour(maxx + guideRadius * 1.5,
+                                lowy + i * 3 * guideRadius, guideRadius,
+                                abstractCurves.get(i)));
+                    }
+                } else {
+                    double lowx = (minx + maxx) * 0.5 - 0.5
+                            * abstractCurves.size() * guideRadius * 3
+                            + guideRadius * 1.5;
+                    for (int i = 0; i < abstractCurves.size(); i++) {
+                        result.add(new CircleContour(
+                                lowx + i * 3 * guideRadius, maxy + guideRadius
+                                        * 1.5, guideRadius, abstractCurves
+                                        .get(i)));
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * A wrapper function around placeContours which has an interface for
+     * placing just one contour.
+     * 
+     * @param outerBox
+     * @param smallest_rad
+     * @param guide_rad
+     * @param zone
+     * @param last_diag
+     * @param ac
+     * @param debug_index
+     * @return
+     * @throws CannotDrawException
+     */
+    private static CircleContour findCircleContour(Rectangle2D.Double outerBox,
+            int smallest_rad, double guide_rad, AbstractBasicRegion zone,
+            AbstractDescription last_diag, AbstractCurve ac,
+            HashMap<AbstractCurve, CircleContour> abstractToConcreteContourMap,
+            ArrayList<CircleContour> drawnCircles)
+            throws CannotDrawException {
+        ArrayList<AbstractCurve> acs = new ArrayList<AbstractCurve>();
+        acs.add(ac);
+        ArrayList<CircleContour> result = placeContours(outerBox, smallest_rad,
+                guide_rad, zone, last_diag, acs, abstractToConcreteContourMap, drawnCircles);
+        if (result == null || result.size() == 0) {
+            return null;
+        } else {
+            return result.get(0);
+        }
+    }
+
+    /**
+     * Is this circle in this area, including some slop for a gap. Slop is
+     * smallestRadius.
+     * 
+     * @param c
+     * @param a
+     * @return
+     */
+    private static boolean circleInArea(CircleContour c, Area a, int smallestRadius) {
+        Area test = new Area(c.getFatInterior(smallestRadius));
+        test.subtract(a);
+        return test.isEmpty();
+    }
+
+    public static boolean doNestedPiercing(RecompData rd, HashMap<AbstractCurve, CircleContour> abstractToConcreteContourMap, ArrayList<CircleContour> drawnCircles, int smallestRadius, double suggested_rad, BuildStep buildStepsHead, ArrayList<RecompositionStep> recompSteps) throws CannotDrawException {
+        AbstractCurve ac = rd.added_curve;
+        Rectangle2D.Double outerBox = CircleContour
+                .makeBigOuterBox(drawnCircles);
+
+
+        if (DEB.level > 3) {
+            System.out.println("make a nested contour");
+        }
+        // make a circle inside containingCircles, outside
+        // excludingCirles.
+
+        AbstractBasicRegion zone = rd.split_zones.get(0);
+
+        RecompositionStep last_step = recompSteps.get(recompSteps
+                .size() - 1);
+        AbstractDescription last_diag = last_step.to();
+
+        // put contour into a zone
+        CircleContour c = findCircleContour(outerBox,
+                smallestRadius, suggested_rad, zone, last_diag, ac, abstractToConcreteContourMap, drawnCircles);
+
+        if (c == null) {
+            throw new CannotDrawException(
+                    "cannot place nested contour");
+        }
+
+        if (willPierce(buildStepsHead, ac)
+                && rd.split_zones.get(0).getNumContours() > 0) {
+            // nudge to the left
+            c.cx -= c.radius * 0.5;
+
+            ConcreteZone cz = makeConcreteZone(rd.split_zones
+                    .get(0), abstractToConcreteContourMap, drawnCircles);
+            Area a = new Area(cz.getShape(outerBox));
+            if (!circleInArea(c, a, smallestRadius)) {
+                c.cx += c.radius * 0.25;
+                c.radius *= 0.75;
+            }
+        }
+        abstractToConcreteContourMap.put(ac, c);
+        addCircle(drawnCircles, c);
+
+        return true;
     }
 
     public static boolean doSinglePiercing(RecompData rd, Map<AbstractCurve, CircleContour> abstractToConcreteContourMap, ArrayList<CircleContour> drawnCircles, double smallestRadius, double suggested_rad, GuideSizeStrategy guideSizes) throws CannotDrawException {

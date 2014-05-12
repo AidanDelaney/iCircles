@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import icircles.gui.CirclesSVGGenerator;
 import icircles.input.AbstractDiagram;
 import icircles.util.CannotDrawException;
+import icircles.util.DEB;
 
 import java.io.File;
 import java.io.IOException;
@@ -84,6 +85,7 @@ public class TestConcreteDiagram {
      
     @Test
     public void testAllDiagrams() {
+        DEB.level = 4;
         ObjectMapper        m  = new ObjectMapper();
         m.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
         AbstractDiagram ad = null;
@@ -101,6 +103,7 @@ public class TestConcreteDiagram {
             currentDiagram = dc.createDiagram(diagramSize);
             collector.checkThat("checksum", datum.expected_checksum, closeTo(currentDiagram.checksum(), 0.00001));
         } catch (CannotDrawException cde) {
+            cde.printStackTrace();
             // The expected result of a CannotDrawException is hardcoded as 0.0
             collector.checkThat("checksum", datum.expected_checksum, is(0.0));
         }
