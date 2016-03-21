@@ -5,6 +5,7 @@ iCircles (short for Inductive Cirles) is a library for drawing spider diagrams (
 
 The iCircles algorithm is detailed in the following paper:
 
+```bibtex
 @article{SFRH2012,
 author = {Gem Stapleton and Jean Flower and Peter Rodgers and John Howse},
 title = {Automatically Drawing {E}uler Diagrams with Circles},
@@ -22,6 +23,7 @@ url = {http://www.cs.kent.ac.uk/pubs/2012/3211},
     number = {3},
     publisher = {Elsevier},
 }
+```
 
 a direct download is available here:
 http://www.cs.kent.ac.uk/pubs/2012/3211/content.pdf
